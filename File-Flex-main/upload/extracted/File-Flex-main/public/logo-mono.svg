@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 36" width="244" height="36" role="img" aria-label="FileFlex">
-  <title>FileFlex</title>
-  <rect x="0" y="0" width="36" height="36" rx="8" fill="none" stroke="#FFFFFF" stroke-width="2"/>
-  <path d="M10 8 L19 8 L27 16 L27 29 L10 29 Z" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M19 8 L19 16 L27 16" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
-  <text x="44" y="30" font-family="'Bebas Neue', 'Arial Narrow', sans-serif" font-size="34" fill="#FFFFFF" letter-spacing="1">FileFlex</text>
-</svg>
