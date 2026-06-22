@@ -1,0 +1,742 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import * as React from "react";
+     4→     4→import Link from "next/link";
+     5→     5→import { AnimatePresence, motion } from "framer-motion";
+     6→     6→import { Search, Menu, ChevronDown, ArrowRight, Languages, ChevronRight, Check, RotateCcw } from "lucide-react";
+     7→     7→import { Button } from "@/components/ui/button";
+     8→     8→import {
+     9→     9→  Popover,
+    10→    10→  PopoverContent,
+    11→    11→  PopoverTrigger,
+    12→    12→} from "@/components/ui/popover";
+    13→    13→import {
+    14→    14→  Sheet,
+    15→    15→  SheetContent,
+    16→    16→  SheetHeader,
+    17→    17→  SheetTitle,
+    18→    18→} from "@/components/ui/sheet";
+    19→    19→import {
+    20→    20→  Accordion,
+    21→    21→  AccordionContent,
+    22→    22→  AccordionItem,
+    23→    23→  AccordionTrigger,
+    24→    24→} from "@/components/ui/accordion";
+    25→    25→import { Logo } from "@/components/Logo";
+    26→    26→import { AppsMenu } from "@/components/header/AppsMenu";
+    27→    27→import { ThemeToggle } from "@/components/theme-toggle";
+    28→    28→import { tools, categoryOrder, categoryLabels } from "@/lib/tools";
+    29→    29→import {
+    30→    30→  convertPdfMenu,
+    31→    31→  allToolsMenu,
+    32→    32→  appsMenu,
+    33→    33→  type MegaMenuColumn,
+    34→    34→} from "@/lib/mega-menu";
+    35→    35→import { useToast } from "@/hooks/use-toast";
+    36→    36→import { useI18n, BUNDLED_LOCALES } from "@/lib/i18n";
+    37→    37→import { cn } from "@/lib/utils";
+    38→    38→
+    39→    39→type MenuKey = "convert" | "allTools";
+    40→    40→
+    41→    41→export function Nav() {
+    42→    42→  const [sheetOpen, setSheetOpen] = React.useState(false);
+    43→    43→
+    44→    44→  return (
+    45→    45→    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-lg">
+    46→    46→      <SharedMegaNav onMobileOpen={() => setSheetOpen(true)} />
+    47→    47→      <MobileSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+    48→    48→    </header>
+    49→    49→  );
+    50→    50→}
+    51→    51→
+    52→    52→/* ================================================================== */
+    53→    53→/* SHARED MEGA MENU NAV                                               */
+    54→    54→/* ================================================================== */
+    55→    55→function SharedMegaNav({ onMobileOpen }: { onMobileOpen: () => void }) {
+    56→    56→  const [activeMenu, setActiveMenu] = React.useState<MenuKey | null>(null);
+    57→    57→  const { t } = useI18n();
+    58→    58→  const openTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    59→    59→  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    60→    60→  const navRef = React.useRef<HTMLDivElement>(null);
+    61→    61→  const panelRef = React.useRef<HTMLDivElement>(null);
+    62→    62→
+    63→    63→  const cancelOpen = () => {
+    64→    64→    if (openTimer.current) {
+    65→    65→      clearTimeout(openTimer.current);
+    66→    66→      openTimer.current = null;
+    67→    67→    }
+    68→    68→  };
+    69→    69→  const cancelClose = () => {
+    70→    70→    if (closeTimer.current) {
+    71→    71→      clearTimeout(closeTimer.current);
+    72→    72→      closeTimer.current = null;
+    73→    73→    }
+    74→    74→  };
+    75→    75→
+    76→    76→  const handleTriggerEnter = (key: MenuKey) => {
+    77→    77→    cancelClose();
+    78→    78→    if (activeMenu === key) return;
+    79→    79→    if (activeMenu !== null) {
+    80→    80→      // Panel already open — swap content instantly (no close/reopen)
+    81→    81→      setActiveMenu(key);
+    82→    82→    } else {
+    83→    83→      // Panel closed — schedule open with 120ms delay
+    84→    84→      cancelOpen();
+    85→    85→      openTimer.current = setTimeout(() => setActiveMenu(key), 120);
+    86→    86→    }
+    87→    87→  };
+    88→    88→
+    89→    89→  const handleTriggerLeave = () => {
+    90→    90→    cancelOpen();
+    91→    91→    // Schedule close — will be cancelled if cursor enters the panel or another trigger.
+    92→    92→    // 300ms grace prevents the panel from closing while the cursor travels toward items.
+    93→    93→    closeTimer.current = setTimeout(() => setActiveMenu(null), 300);
+    94→    94→  };
+    95→    95→
+    96→    96→  const handlePanelEnter = () => {
+    97→    97→    cancelClose();
+    98→    98→  };
+    99→    99→
+   100→   100→  const handlePanelLeave = () => {
+   101→   101→    cancelClose();
+   102→   102→    closeTimer.current = setTimeout(() => setActiveMenu(null), 300);
+   103→   103→  };
+   104→   104→
+   105→   105→  React.useEffect(
+   106→   106→    () => () => {
+   107→   107→      cancelOpen();
+   108→   108→      cancelClose();
+   109→   109→    },
+   110→   110→    []
+   111→   111→  );
+   112→   112→
+   113→   113→  const columns: MegaMenuColumn[] = activeMenu === "convert" ? convertPdfMenu : allToolsMenu;
+   114→   114→  const showSearch = activeMenu === "allTools";
+   115→   115→
+   116→   116→  return (
+   117→   117→    <>
+   118→   118→      <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-8 px-4 sm:px-6">
+   119→   119→        {/* LEFT — logo (always LTR, never flips in RTL) */}
+   120→   120→        <Link
+   121→   121→          href="/"
+   122→   122→          className="logo-lock flex shrink-0 items-center gap-2 rounded-lg focus-visible:ring-2 focus-visible:ring-ring"
+   123→   123→          aria-label="FileFlex home"
+   124→   124→          dir="ltr"
+   125→   125→        >
+   126→   126→          <Logo className="h-7 w-auto" size={28} />
+   127→   127→        </Link>
+   128→   128→
+   129→   129→        {/* CENTER — horizontal nav (desktop) */}
+   130→   130→        <nav
+   131→   131→          ref={navRef}
+   132→   132→          className="hidden items-center justify-center gap-1 lg:flex"
+   133→   133→          aria-label="Main navigation"
+   134→   134→          onMouseLeave={handleTriggerLeave}
+   135→   135→        >
+   136→   136→          <NavLink href="/tools/pdf-merge">{t("nav.mergePdf")}</NavLink>
+   137→   137→          <NavLink href="/tools/pdf-split">{t("nav.splitPdf")}</NavLink>
+   138→   138→          <NavLink href="/tools/pdf-compress">{t("nav.compressPdf")}</NavLink>
+   139→   139→          <MegaTrigger
+   140→   140→            label={t("nav.convertPdf")}
+   141→   141→            isActive={activeMenu === "convert"}
+   142→   142→            onEnter={() => handleTriggerEnter("convert")}
+   143→   143→            onLeave={handleTriggerLeave}
+   144→   144→          />
+   145→   145→          <MegaTrigger
+   146→   146→            label={t("nav.allPdfTools")}
+   147→   147→            isActive={activeMenu === "allTools"}
+   148→   148→            onEnter={() => handleTriggerEnter("allTools")}
+   149→   149→            onLeave={handleTriggerLeave}
+   150→   150→          />
+   151→   151→        </nav>
+   152→   152→
+   153→   153→        {/* RIGHT — theme toggle + 9-dot Apps popover (desktop), hamburger (mobile) */}
+   154→   154→        <div className="flex items-center justify-end gap-3">
+   155→   155→          <div className="hidden items-center gap-3 lg:flex">
+   156→   156→            <ThemeToggle />
+   157→   157→            <span className="h-6 w-px bg-border dark:bg-transparent" aria-hidden />
+   158→   158→            <AppsMenu />
+   159→   159→          </div>
+   160→   160→          <Button
+   161→   161→            variant="ghost"
+   162→   162→            size="icon"
+   163→   163→            onClick={onMobileOpen}
+   164→   164→            aria-label="Open menu"
+   165→   165→            className="lg:hidden"
+   166→   166→          >
+   167→   167→            <Menu className="size-5" />
+   168→   168→          </Button>
+   169→   169→        </div>
+   170→   170→      </div>
+   171→   171→
+   172→   172→      {/* Shared mega panel + hover bridge */}
+   173→   173→      <AnimatePresence>
+   174→   174→        {activeMenu !== null && (
+   175→   175→          <>
+   176→   176→            {/* Hover bridge — invisible div between nav and panel */}
+   177→   177→            <div
+   178→   178→              className="absolute inset-x-0 top-16 z-40 h-3"
+   179→   179→              onMouseEnter={handlePanelEnter}
+   180→   180→              onMouseLeave={handlePanelLeave}
+   181→   181→              aria-hidden
+   182→   182→            />
+   183→   183→            <motion.div
+   184→   184→              ref={panelRef}
+   185→   185→              className="absolute inset-x-0 top-[4.25rem] z-40 px-4"
+   186→   186→              initial={{ opacity: 0, y: -6 }}
+   187→   187→              animate={{ opacity: 1, y: 0 }}
+   188→   188→              exit={{ opacity: 0, y: -6 }}
+   189→   189→              transition={{ duration: 0.16, ease: "easeOut" }}
+   190→   190→              onMouseEnter={handlePanelEnter}
+   191→   191→              onMouseLeave={handlePanelLeave}
+   192→   192→              role="menu"
+   193→   193→            >
+   194→   194→              <div className="mx-auto max-w-5xl">
+   195→   195→                <MegaPanel
+   196→   196→                  columns={columns}
+   197→   197→                  showSearch={showSearch}
+   198→   198→                  onClose={() => {
+   199→   199→                    cancelClose();
+   200→   200→                    setActiveMenu(null);
+   201→   201→                  }}
+   202→   202→                  key={activeMenu}
+   203→   203→                />
+   204→   204→              </div>
+   205→   205→            </motion.div>
+   206→   206→          </>
+   207→   207→        )}
+   208→   208→      </AnimatePresence>
+   209→   209→    </>
+   210→   210→  );
+   211→   211→}
+   212→   212→
+   213→   213→function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+   214→   214→  return (
+   215→   215→    <Link
+   216→   216→      href={href}
+   217→   217→      className="nav-item relative rounded-md px-3 py-2 text-sm font-bold uppercase tracking-wider text-foreground/80 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+   218→   218→    >
+   219→   219→      {children}
+   220→   220→      <span className="absolute inset-x-3 -bottom-px h-0.5 origin-left scale-x-0 rounded-full bg-primary transition-transform duration-200 hover:scale-x-100" />
+   221→   221→    </Link>
+   222→   222→  );
+   223→   223→}
+   224→   224→
+   225→   225→function MegaTrigger({
+   226→   226→  label,
+   227→   227→  isActive,
+   228→   228→  onEnter,
+   229→   229→  onLeave,
+   230→   230→}: {
+   231→   231→  label: string;
+   232→   232→  isActive: boolean;
+   233→   233→  onEnter: () => void;
+   234→   234→  onLeave: () => void;
+   235→   235→}) {
+   236→   236→  return (
+   237→   237→    <button
+   238→   238→      type="button"
+   239→   239→      onMouseEnter={onEnter}
+   240→   240→      onMouseLeave={onLeave}
+   241→   241→      onFocus={onEnter}
+   242→   242→      onBlur={onLeave}
+   243→   243→      className={cn(
+   244→   244→        "nav-item flex items-center gap-1 rounded-md px-3 py-2 text-sm font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+   245→   245→        isActive ? "text-foreground" : "text-foreground/80 hover:text-foreground"
+   246→   246→      )}
+   247→   247→      aria-expanded={isActive}
+   248→   248→      aria-haspopup="true"
+   249→   249→    >
+   250→   250→      {label}
+   251→   251→      <ChevronDown
+   252→   252→        className={cn(
+   253→   253→          "size-3.5 transition-transform duration-200",
+   254→   254→          isActive && "rotate-180"
+   255→   255→        )}
+   256→   256→      />
+   257→   257→    </button>
+   258→   258→  );
+   259→   259→}
+   260→   260→
+   261→   261→/* ================================================================== */
+   262→   262→/* LANGUAGE ROW — 5 languages, Radix Popover, opaque, no auto-translate */
+   263→   263→/* (Exported so the header's AppsPopover component can reuse it.)        */
+   264→   264→/* ================================================================== */
+   265→   265→export function LanguageRow({
+   266→   266→  langOpen,
+   267→   267→  setLangOpen,
+   268→   268→}: {
+   269→   269→  langOpen: boolean;
+   270→   270→  setLangOpen: (v: boolean) => void;
+   271→   271→}) {
+   272→   272→  const { locale, setLocale, t } = useI18n();
+   273→   273→  const [langs, setLangs] = React.useState<{ code: string; english: string; native: string; dir: string }[] | null>(null);
+   274→   274→
+   275→   275→  React.useEffect(() => {
+   276→   276→    import("@/lib/languages").then((m) => setLangs(m.languages));
+   277→   277→  }, []);
+   278→   278→
+   279→   279→  const currentNative = React.useMemo(() => {
+   280→   280→    if (!langs) return "English";
+   281→   281→    return langs.find((l) => l.code === locale)?.native ?? "English";
+   282→   282→  }, [langs, locale]);
+   283→   283→
+   284→   284→  const selectLang = (code: string, native: string) => {
+   285→   285→    setLocale(code);
+   286→   286→    setLangOpen(false);
+   287→   287→  };
+   288→   288→
+   289→   289→  return (
+   290→   290→    <Popover open={langOpen} onOpenChange={setLangOpen} modal={false}>
+   291→   291→      <PopoverTrigger asChild>
+   292→   292→        <button
+   293→   293→          type="button"
+   294→   294→          className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+   295→   295→          aria-haspopup="listbox"
+   296→   296→          aria-expanded={langOpen}
+   297→   297→          role="menuitem"
+   298→   298→          onMouseEnter={() => setLangOpen(true)}
+   299→   299→          onClick={() => setLangOpen(!langOpen)}
+   300→   300→          onKeyDown={(e) => {
+   301→   301→            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLangOpen(!langOpen); }
+   302→   302→            if (e.key === "Escape") { e.preventDefault(); setLangOpen(false); }
+   303→   303→          }}
+   304→   304→        >
+   305→   305→          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10"><Languages className="size-4 text-primary" /></span>
+   306→   306→          <span className="flex min-w-0 flex-1 items-center justify-between">
+   307→   307→            <span className="flex min-w-0 flex-col">
+   308→   308→              <span className="text-sm font-semibold">{t("nav.language")}</span>
+   309→   309→              <span className="truncate text-xs text-muted-foreground">{currentNative}</span>
+   310→   310→            </span>
+   311→   311→            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+   312→   312→          </span>
+   313→   313→        </button>
+   314→   314→      </PopoverTrigger>
+   315→   315→      <PopoverContent
+   316→   316→        side="right"
+   317→   317→        align="start"
+   318→   318→        sideOffset={8}
+   319→   319→        collisionPadding={16}
+   320→   320→        className="z-[100] w-[260px] rounded-2xl border border-border p-3 shadow-[0_16px_40px_rgba(0,0,0,0.10),0_2px_4px_rgba(0,0,0,0.04)] backdrop-blur-[8px]"
+   321→   321→        style={{ backgroundColor: "var(--popover)" }}
+   322→   322→        onOpenAutoFocus={(e) => e.preventDefault()}
+   323→   323→        onKeyDown={(e) => {
+   324→   324→          if (e.key === "Escape") { e.preventDefault(); setLangOpen(false); }
+   325→   325→        }}
+   326→   326→      >
+   327→   327→        <div role="listbox" aria-label={t("nav.selectLanguage")}>
+   328→   328→          {(langs ?? []).map((l) => (
+   329→   329→            <button
+   330→   330→              key={l.code}
+   331→   331→              type="button"
+   332→   332→              role="option"
+   333→   333→              aria-selected={l.code === locale}
+   334→   334→              className="grid w-full grid-cols-[28px_1fr_auto] items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+   335→   335→              onClick={() => selectLang(l.code, l.native)}
+   336→   336→            >
+   337→   337→              <span className="grid size-7 shrink-0 place-items-center rounded bg-primary/10 text-[10px] font-bold uppercase text-primary">{l.code}</span>
+   338→   338→              <span className="flex min-w-0 flex-col">
+   339→   339→                <span className="truncate text-sm font-medium">{l.native}</span>
+   340→   340→                <span className="truncate text-xs text-muted-foreground">{l.english}</span>
+   341→   341→              </span>
+   342→   342→              {l.code === locale && <Check className="size-4 shrink-0 text-primary" />}
+   343→   343→            </button>
+   344→   344→          ))}
+   345→   345→        </div>
+   346→   346→      </PopoverContent>
+   347→   347→    </Popover>
+   348→   348→  );
+   349→   349→}
+   350→   350→
+   351→   351→/* ================================================================== */
+   352→   352→/* MEGA PANEL CONTENT                                                 */
+   353→   353→/* ================================================================== */
+   354→   354→function MegaPanel({
+   355→   355→  columns,
+   356→   356→  showSearch,
+   357→   357→  onClose,
+   358→   358→}: {
+   359→   359→  columns: MegaMenuColumn[];
+   360→   360→  showSearch: boolean;
+   361→   361→  onClose: () => void;
+   362→   362→}) {
+   363→   363→  const [query, setQuery] = React.useState("");
+   364→   364→  // Keyboard-navigation index into the flat list of non-disabled items.
+   365→   365→  // -1 means nothing is highlighted (focus stays on the search input).
+   366→   366→  const [activeIndex, setActiveIndex] = React.useState(-1);
+   367→   367→  const itemRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
+   368→   368→
+   369→   369→  const filteredColumns = React.useMemo(() => {
+   370→   370→    if (!showSearch || !query.trim()) return columns;
+   371→   371→    const q = query.trim().toLowerCase();
+   372→   372→    return columns
+   373→   373→      .map((col) => ({
+   374→   374→        ...col,
+   375→   375→        items: col.items.filter(
+   376→   376→          (item) =>
+   377→   377→            item.label.toLowerCase().includes(q) ||
+   378→   378→            item.description.toLowerCase().includes(q)
+   379→   379→        ),
+   380→   380→      }))
+   381→   381→      .filter((col) => col.items.length > 0);
+   382→   382→  }, [columns, query, showSearch]);
+   383→   383→
+   384→   384→  // Build a flat list of navigable (non-disabled) items + assign each item a
+   385→   385→  // global index so arrow-key navigation works across columns.
+   386→   386→  const { indexedColumns, flatCount } = React.useMemo(() => {
+   387→   387→    let counter = 0;
+   388→   388→    const indexed = filteredColumns.map((col) => ({
+   389→   389→      ...col,
+   390→   390→      items: col.items.map((item) => ({
+   391→   391→        ...item,
+   392→   392→        _idx: item.disabled ? -1 : counter++,
+   393→   393→      })),
+   394→   394→    }));
+   395→   395→    return { indexedColumns: indexed, flatCount: counter };
+   396→   396→  }, [filteredColumns]);
+   397→   397→
+   398→   398→  // Reset the active highlight whenever the filter result set changes.
+   399→   399→  React.useEffect(() => {
+   400→   400→    setActiveIndex(-1);
+   401→   401→    itemRefs.current = [];
+   402→   402→  }, [query]);
+   403→   403→
+   404→   404→  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+   405→   405→    if (e.key === "ArrowDown") {
+   406→   406→      e.preventDefault();
+   407→   407→      setActiveIndex((i) => (flatCount === 0 ? -1 : Math.min(i + 1, flatCount - 1)));
+   408→   408→    } else if (e.key === "ArrowUp") {
+   409→   409→      e.preventDefault();
+   410→   410→      setActiveIndex((i) => (flatCount === 0 ? -1 : Math.max(i - 1, 0)));
+   411→   411→    } else if (e.key === "Enter") {
+   412→   412→      e.preventDefault();
+   413→   413→      const idx = activeIndex;
+   414→   414→      if (idx >= 0 && idx < (itemRefs.current.length)) {
+   415→   415→        itemRefs.current[idx]?.click();
+   416→   416→      }
+   417→   417→    } else if (e.key === "Escape") {
+   418→   418→      e.preventDefault();
+   419→   419→      if (query) {
+   420→   420→        setQuery("");
+   421→   421→      } else {
+   422→   422→        onClose();
+   423→   423→      }
+   424→   424→    }
+   425→   425→  };
+   426→   426→
+   427→   427→  return (
+   428→   428→    <div className="rounded-2xl border border-border bg-popover p-6 shadow-[0_16px_40px_rgba(0,0,0,0.10),0_2px_4px_rgba(0,0,0,0.04)]" style={{ backgroundColor: "var(--popover)" }}>
+   429→   429→      {showSearch && (
+   430→   430→        <div className="mb-4 border-b pb-3">
+   431→   431→          <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+   432→   432→            <Search className="size-4 text-muted-foreground" />
+   433→   433→            <input
+   434→   434→              autoFocus
+   435→   435→              value={query}
+   436→   436→              onChange={(e) => setQuery(e.target.value)}
+   437→   437→              onKeyDown={onKeyDown}
+   438→   438→              placeholder="Filter tools…"
+   439→   439→              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+   440→   440→              aria-label="Filter tools"
+   441→   441→              role="combobox"
+   442→   442→              aria-expanded={flatCount > 0}
+   443→   443→              aria-controls="mega-tools-list"
+   444→   444→              aria-activedescendant={activeIndex >= 0 ? `mega-item-${activeIndex}` : undefined}
+   445→   445→            />
+   446→   446→          </div>
+   447→   447→        </div>
+   448→   448→      )}
+   449→   449→      <motion.div
+   450→   450→        initial={{ opacity: 0, x: -6 }}
+   451→   451→        animate={{ opacity: 1, x: 0 }}
+   452→   452→        transition={{ duration: 0.16, ease: "easeOut" }}
+   453→   453→        className="grid gap-x-8 gap-y-2"
+   454→   454→        style={{
+   455→   455→          gridTemplateColumns: `repeat(${Math.min(filteredColumns.length, 4)}, minmax(200px, 1fr))`,
+   456→   456→        }}
+   457→   457→        id="mega-tools-list"
+   458→   458→        role="listbox"
+   459→   459→      >
+   460→   460→        {indexedColumns.map((col) => (
+   461→   461→          <div key={col.title}>
+   462→   462→            <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+   463→   463→              {col.title}
+   464→   464→            </p>
+   465→   465→            <div className="flex flex-col">
+   466→   466→              {col.items.map((item) => {
+   467→   467→                const Icon = item.icon;
+   468→   468→                return (
+   469→   469→                  <MegaLink
+   470→   470→                    key={item.label}
+   471→   471→                    href={item.href}
+   472→   472→                    disabled={item.disabled}
+   473→   473→                    onClose={onClose}
+   474→   474→                    isActive={!item.disabled && item._idx === activeIndex}
+   475→   475→                    itemRef={
+   476→   476→                      item.disabled
+   477→   477→                        ? undefined
+   478→   478→                        : (el) => {
+   479→   479→                            if (item._idx >= 0) itemRefs.current[item._idx] = el;
+   480→   480→                          }
+   481→   481→                    }
+   482→   482→                    ariaId={item.disabled ? undefined : `mega-item-${item._idx}`}
+   483→   483→                  >
+   484→   484→                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10">
+   485→   485→                      <Icon className="size-4 text-primary" />
+   486→   486→                    </span>
+   487→   487→                    <span className="flex min-w-0 flex-col">
+   488→   488→                      <span className="flex items-center gap-2 text-sm font-semibold">
+   489→   489→                        {item.label}
+   490→   490→                        {item.disabled && (
+   491→   491→                          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">
+   492→   492→                            Soon
+   493→   493→                          </span>
+   494→   494→                        )}
+   495→   495→                      </span>
+   496→   496→                      <span className="truncate text-xs text-muted-foreground">
+   497→   497→                        {item.description}
+   498→   498→                      </span>
+   499→   499→                    </span>
+   500→   500→                  </MegaLink>
+   501→   501→                );
+   502→   502→              })}
+   503→   503→            </div>
+   504→   504→          </div>
+   505→   505→        ))}
+   506→   506→      </motion.div>
+   507→   507→      {filteredColumns.length === 0 && (
+   508→   508→        <p className="py-8 text-center text-sm text-muted-foreground">
+   509→   509→          No tools match “{query}”.
+   510→   510→        </p>
+   511→   511→      )}
+   512→   512→      <div className="mt-4 flex justify-end border-t pt-3">
+   513→   513→        <Link
+   514→   514→          href="/tools"
+   515→   515→          onClick={onClose}
+   516→   516→          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+   517→   517→        >
+   518→   518→          Browse all {tools.length} tools <ArrowRight className="size-3.5" />
+   519→   519→        </Link>
+   520→   520→      </div>
+   521→   521→    </div>
+   522→   522→  );
+   523→   523→}
+   524→   524→
+   525→   525→function MegaLink({
+   526→   526→  href,
+   527→   527→  disabled,
+   528→   528→  onClose,
+   529→   529→  children,
+   530→   530→  isActive,
+   531→   531→  itemRef,
+   532→   532→  ariaId,
+   533→   533→}: {
+   534→   534→  href: string;
+   535→   535→  disabled?: boolean;
+   536→   536→  onClose: () => void;
+   537→   537→  children: React.ReactNode;
+   538→   538→  isActive?: boolean;
+   539→   539→  itemRef?: (el: HTMLAnchorElement | null) => void;
+   540→   540→  ariaId?: string;
+   541→   541→}) {
+   542→   542→  if (disabled) {
+   543→   543→    return (
+   544→   544→      <span className="flex cursor-not-allowed items-center gap-3 rounded-lg px-2 py-2 opacity-60">
+   545→   545→        {children}
+   546→   546→      </span>
+   547→   547→    );
+   548→   548→  }
+   549→   549→  return (
+   550→   550→    <Link
+   551→   551→      ref={itemRef}
+   552→   552→      href={href}
+   553→   553→      onClick={onClose}
+   554→   554→      id={ariaId}
+   555→   555→      role="option"
+   556→   556→      aria-selected={isActive}
+   557→   557→      className={cn(
+   558→   558→        "flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
+   559→   559→        isActive && "bg-accent ring-1 ring-ring"
+   560→   560→      )}
+   561→   561→    >
+   562→   562→      {children}
+   563→   563→    </Link>
+   564→   564→  );
+   565→   565→}
+   566→   566→
+   567→   567→/* ================================================================== */
+   568→   568→/* MOBILE SHEET                                                       */
+   569→   569→/* ================================================================== */
+   570→   570→function MobileSheet({
+   571→   571→  open,
+   572→   572→  onOpenChange,
+   573→   573→}: {
+   574→   574→  open: boolean;
+   575→   575→  onOpenChange: (v: boolean) => void;
+   576→   576→}) {
+   577→   577→  return (
+   578→   578→    <Sheet open={open} onOpenChange={onOpenChange}>
+   579→   579→      <SheetContent side="right" className="w-[340px] overflow-y-auto p-0">
+   580→   580→        <SheetHeader className="px-5 pt-5">
+   581→   581→          <SheetTitle className="text-left logo-lock" dir="ltr">
+   582→   582→            <Logo className="h-7 w-auto" size={28} />
+   583→   583→          </SheetTitle>
+   584→   584→        </SheetHeader>
+   585→   585→        <div className="px-3 pb-10 pt-3">
+   586→   586→          {/* Search */}
+   587→   587→          <MobileSearch onClose={() => onOpenChange(false)} />
+   588→   588→
+   589→   589→          <Accordion type="multiple" className="w-full">
+   590→   590→            {/* Convert PDF section */}
+   591→   591→            <AccordionItem value="convert">
+   592→   592→              <AccordionTrigger className="text-sm font-semibold uppercase tracking-wide">
+   593→   593→                Convert PDF
+   594→   594→              </AccordionTrigger>
+   595→   595→              <AccordionContent>
+   596→   596→                <div className="flex flex-col gap-0.5 pb-2">
+   597→   597→                  {convertPdfMenu.flatMap((col) => col.items).map((item) => {
+   598→   598→                    const Icon = item.icon;
+   599→   599→                    return (
+   600→   600→                      <Link
+   601→   601→                        key={item.label}
+   602→   602→                        href={item.href}
+   603→   603→                        onClick={() => onOpenChange(false)}
+   604→   604→                        className="flex min-h-[44px] items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-accent"
+   605→   605→                      >
+   606→   606→                        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10">
+   607→   607→                          <Icon className="size-4 text-primary" />
+   608→   608→                        </span>
+   609→   609→                        <span className="flex min-w-0 flex-col">
+   610→   610→                          <span className="font-medium">{item.label}</span>
+   611→   611→                          <span className="truncate text-xs text-muted-foreground">
+   612→   612→                            {item.description}
+   613→   613→                          </span>
+   614→   614→                        </span>
+   615→   615→                      </Link>
+   616→   616→                    );
+   617→   617→                  })}
+   618→   618→                </div>
+   619→   619→              </AccordionContent>
+   620→   620→            </AccordionItem>
+   621→   621→
+   622→   622→            {/* All tools by category */}
+   623→   623→            {categoryOrder.map((cat) => (
+   624→   624→              <AccordionItem key={cat} value={cat}>
+   625→   625→                <AccordionTrigger className="text-sm font-semibold uppercase tracking-wide">
+   626→   626→                  {categoryLabels[cat]}
+   627→   627→                </AccordionTrigger>
+   628→   628→                <AccordionContent>
+   629→   629→                  <div className="flex flex-col gap-0.5 pb-2">
+   630→   630→                    {tools
+   631→   631→                      .filter((t) => t.category === cat)
+   632→   632→                      .map((t) => {
+   633→   633→                        const Icon = t.icon;
+   634→   634→                        return (
+   635→   635→                          <Link
+   636→   636→                            key={t.slug}
+   637→   637→                            href={`/tools/${t.slug}`}
+   638→   638→                            onClick={() => onOpenChange(false)}
+   639→   639→                            className="flex min-h-[44px] items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-accent"
+   640→   640→                          >
+   641→   641→                            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10">
+   642→   642→                              <Icon className="size-4 text-primary" />
+   643→   643→                            </span>
+   644→   644→                            <span className="flex min-w-0 flex-col">
+   645→   645→                              <span className="font-medium">{t.name}</span>
+   646→   646→                              <span className="truncate text-xs text-muted-foreground">
+   647→   647→                                {t.short}
+   648→   648→                              </span>
+   649→   649→                            </span>
+   650→   650→                          </Link>
+   651→   651→                        );
+   652→   652→                      })}
+   653→   653→                  </div>
+   654→   654→                </AccordionContent>
+   655→   655→              </AccordionItem>
+   656→   656→            ))}
+   657→   657→          </Accordion>
+   658→   658→
+   659→   659→          {/* Bottom: theme + more */}
+   660→   660→          <div className="mt-4 border-t pt-4">
+   661→   661→            <div className="mb-3 flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
+   662→   662→              <span className="text-xs font-medium text-muted-foreground">Theme</span>
+   663→   663→              <ThemeToggle />
+   664→   664→            </div>
+   665→   665→            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+   666→   666→              More
+   667→   667→            </p>
+   668→   668→            <div className="flex flex-col">
+   669→   669→              <Link href="/help" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   670→   670→                Help Center
+   671→   671→              </Link>
+   672→   672→              <Link href="/contact" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   673→   673→                Contact
+   674→   674→              </Link>
+   675→   675→              <Link href="/status" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   676→   676→                Status
+   677→   677→              </Link>
+   678→   678→              <Link href="/solutions/students" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   679→   679→                For Students
+   680→   680→              </Link>
+   681→   681→              <Link href="/solutions/teams" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   682→   682→                For Teams
+   683→   683→              </Link>
+   684→   684→              <Link href="/solutions/developers" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   685→   685→                For Developers
+   686→   686→              </Link>
+   687→   687→            </div>
+   688→   688→          </div>
+   689→   689→        </div>
+   690→   690→      </SheetContent>
+   691→   691→    </Sheet>
+   692→   692→  );
+   693→   693→}
+   694→   694→
+   695→   695→/** Mobile search — filters all tools and navigates on click. */
+   696→   696→function MobileSearch({ onClose }: { onClose: () => void }) {
+   697→   697→  const [q, setQ] = React.useState("");
+   698→   698→  const filtered = React.useMemo(() => {
+   699→   699→    if (!q.trim()) return [];
+   700→   700→    const query = q.trim().toLowerCase();
+   701→   701→    return tools.filter(
+   702→   702→      (t) =>
+   703→   703→        t.name.toLowerCase().includes(query) ||
+   704→   704→        t.short.toLowerCase().includes(query) ||
+   705→   705→        t.keywords.some((k) => k.includes(query))
+   706→   706→    );
+   707→   707→  }, [q]);
+   708→   708→
+   709→   709→  return (
+   710→   710→    <div className="mb-4">
+   711→   711→      <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+   712→   712→        <Search className="size-4 text-muted-foreground" />
+   713→   713→        <input
+   714→   714→          value={q}
+   715→   715→          onChange={(e) => setQ(e.target.value)}
+   716→   716→          placeholder="Search tools…"
+   717→   717→          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+   718→   718→          aria-label="Search tools"
+   719→   719→        />
+   720→   720→      </div>
+   721→   721→      {filtered.length > 0 && (
+   722→   722→        <div className="mt-2 max-h-60 overflow-y-auto scrollbar-thin">
+   723→   723→          {filtered.map((t) => {
+   724→   724→            const Icon = t.icon;
+   725→   725→            return (
+   726→   726→              <Link
+   727→   727→                key={t.slug}
+   728→   728→                href={`/tools/${t.slug}`}
+   729→   729→                onClick={onClose}
+   730→   730→                className="flex min-h-[44px] items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-accent"
+   731→   731→              >
+   732→   732→                <Icon className="size-4 text-primary" />
+   733→   733→                <span className="font-medium">{t.name}</span>
+   734→   734→              </Link>
+   735→   735→            );
+   736→   736→          })}
+   737→   737→        </div>
+   738→   738→      )}
+   739→   739→    </div>
+   740→   740→  );
+   741→   741→}
+   742→   742→

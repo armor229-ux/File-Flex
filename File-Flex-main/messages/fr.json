@@ -1,0 +1,302 @@
+{
+  "common": {
+    "appName": "FileFlex",
+    "tagline": "Chaque fichier. Chaque format. Gratuit.",
+    "openMenu": "Ouvrir le menu",
+    "search": "Rechercher",
+    "searchTools": "Rechercher des outils…",
+    "filterTools": "Filtrer les outils…",
+    "browseAllTools": "Parcourir Tous les Outils",
+    "openTool": "Ouvrir l'outil",
+    "loading": "Chargement…",
+    "soon": "Bientôt",
+    "beta": "Beta"
+  },
+  "nav": {
+    "mergePdf": "Fusionner PDF",
+    "splitPdf": "Diviser PDF",
+    "compressPdf": "Compresser PDF",
+    "convertPdf": "Convertir PDF",
+    "allPdfTools": "Tous les Outils PDF",
+    "appsMore": "Applications et plus",
+    "toggleTheme": "Changer de thème",
+    "switchToDark": "Passer en mode sombre",
+    "switchToLight": "Passer en mode clair",
+    "products": "Produits",
+    "help": "Aide",
+    "fileflexWeb": "FileFlex Web",
+    "fileflexWebHint": "Utilisez-le maintenant dans votre navigateur.",
+    "fileflexDesktop": "FileFlex Desktop",
+    "fileflexMobile": "FileFlex Mobile",
+    "comingSoon": "Bientôt disponible.",
+    "helpCenter": "Centre d'Aide",
+    "helpCenterHint": "Guides et FAQ",
+    "contact": "Contact",
+    "contactHint": "Nous contacter",
+    "language": "Langue",
+    "searchLanguage": "Rechercher une langue…",
+    "loadingLanguages": "Chargement des langues…",
+    "noLanguagesMatch": "Aucune langue ne correspond à « {query} ».",
+    "autoTranslate": "Auto-traduire l'UI (beta)",
+    "autoTranslateHint": "Traduire l'interface pour les langues sans traduction intégrée.",
+    "resetTranslations": "Réinitialiser les traductions",
+    "resetTranslationsHint": "Effacer les traductions automatiques en cache.",
+    "selectLanguage": "Sélectionner une langue"
+  },
+  "hero": {
+    "badge": "{count} outils gratuits · sans inscription · sans téléversement",
+    "title": "CHAQUE FICHIER. CHAQUE FORMAT. GRATUIT.",
+    "subtitle": "Convertissez, compressez, protégez et nettoyez n'importe quel fichier — directement dans votre navigateur.",
+    "cta": "Parcourir Tous les Outils",
+    "filesProcessed": "{count} fichiers traités par des personnes comme vous"
+  },
+  "home": {
+    "allTools": "Tous les Outils",
+    "allToolsDesc": "{count} outils PDF, images, bureautique et utilitaires — tous gratuits et privés.",
+    "viewAll": "Voir tout",
+    "faqTitle": "Questions Fréquentes",
+    "faqSubtitle": "Tout ce que vous voulez savoir sur la confidentialité et le fonctionnement."
+  },
+  "why": {
+    "private": "Privé",
+    "privateText": "Les fichiers ne quittent jamais votre navigateur.",
+    "fast": "Rapide",
+    "fastText": "Traitement natif côté client.",
+    "free": "Gratuit",
+    "freeText": "Sans inscription, sans filigrane.",
+    "noSignup": "Sans Inscription",
+    "noSignupText": "Ouvrez et utilisez — c'est tout."
+  },
+  "footer": {
+    "privacy": "Confidentialité",
+    "terms": "Conditions",
+    "cookies": "Cookies",
+    "contact": "Contact",
+    "builtWith": "Fait avec ❤ pour la confidentialité",
+    "rights": "© {year} FileFlex. Tous droits réservés.",
+    "more": "Plus",
+    "clientSide": "100% de traitement côté client",
+    "forStudents": "Pour les Étudiants",
+    "forTeams": "Pour les Équipes",
+    "forDevelopers": "Pour les Développeurs",
+    "helpCenter": "Centre d'Aide",
+    "status": "Statut"
+  },
+  "toolHeader": {
+    "about": "À propos de {name}",
+    "toolNotFound": "Outil introuvable",
+    "browseTools": "Parcourir tous les outils →",
+    "private": "Privé",
+    "privateText": "Les fichiers ne quittent jamais votre navigateur.",
+    "fast": "Rapide",
+    "fastText": "Traitement natif côté client.",
+    "free": "Gratuit pour toujours",
+    "freeText": "Sans inscription, sans filigrane."
+  },
+  "language": {
+    "toastBundled": "Langue définie sur {name}.",
+    "toastAuto": "Langue définie sur {name}. Les traductions sont générées automatiquement (beta). La qualité peut varier.",
+    "toastReset": "Traductions automatiques effacées. Anglais restauré.",
+    "betaNotice": "Les traductions sont générées automatiquement (beta) pour cette langue. La qualité peut varier."
+  },
+  "categories": {
+    "PDF": "Outils PDF",
+    "Images": "Outils Image",
+    "Office": "Outils Bureau",
+    "Utilities": "Utilitaires"
+  },
+  "faq": {
+    "q1": "Mes fichiers sont-ils téléchargés sur un serveur ?",
+    "a1": "Non. Chaque outil FileFlex fonctionne entièrement dans votre navigateur. Vos fichiers sont lus localement et traités sur votre appareil — ils ne sont jamais envoyés à un serveur.",
+    "q2": "FileFlex est-il vraiment gratuit ?",
+    "a2": "Oui. Tous les outils sont gratuits sans inscription ni filigrane. Financé par des publicités optionnelles que vous pouvez refuser.",
+    "q3": "Dois-je installer quelque chose ?",
+    "a3": "Aucune installation requise. FileFlex fonctionne dans tout navigateur moderne.",
+    "q4": "Quels formats de fichiers sont pris en charge ?",
+    "a4": "Les outils PDF prennent en charge les fichiers PDF standard. Les outils image gèrent JPG, PNG, WebP et HEIC.",
+    "q5": "Cela fonctionne-t-il hors ligne ?",
+    "a5": "Une fois la page chargée, le traitement se fait localement.",
+    "q6": "Mes données sont-elles suivies ?",
+    "a6": "FileFlex ne suit pas vos fichiers. Analyses et publicités uniquement si vous acceptez les cookies.",
+    "q7": "Puis-je utiliser FileFlex sur mobile ?",
+    "a7": "Oui. L'interface est mobile et entièrement responsive."
+  },
+  "tools": {
+    "pdf-merge": {
+      "name": "Merge PDF",
+      "desc": "Combine multiple PDFs into one file."
+    },
+    "pdf-split": {
+      "name": "Split PDF",
+      "desc": "Split a PDF into pages or ranges."
+    },
+    "pdf-compress": {
+      "name": "Compress PDF",
+      "desc": "Reduce PDF size by downsampling images."
+    },
+    "pdf-rotate": {
+      "name": "Rotate PDF",
+      "desc": "Rotate all pages of a PDF."
+    },
+    "pdf-reorder": {
+      "name": "Reorder PDF",
+      "desc": "Drag-and-drop to rearrange PDF pages."
+    },
+    "pdf-delete-pages": {
+      "name": "Delete PDF Pages",
+      "desc": "Remove unwanted pages from a PDF."
+    },
+    "pdf-to-jpg": {
+      "name": "PDF to JPG",
+      "desc": "Convert each PDF page to JPG/PNG."
+    },
+    "jpg-to-pdf": {
+      "name": "JPG to PDF",
+      "desc": "Turn images into a PDF."
+    },
+    "pdf-extract-text": {
+      "name": "Extract Text from PDF",
+      "desc": "Copy out the text content of a PDF."
+    },
+    "pdf-password": {
+      "name": "PDF Password",
+      "desc": "Add real AES-256 password protection."
+    },
+    "pdf-unlock": {
+      "name": "PDF Unlock",
+      "desc": "Remove a password you already know."
+    },
+    "pdf-add-watermark": {
+      "name": "PDF Watermark",
+      "desc": "Stamp a text watermark on every page."
+    },
+    "pdf-add-page-numbers": {
+      "name": "PDF Page Numbers",
+      "desc": "Add page numbers to a PDF."
+    },
+    "pdf-edit-metadata": {
+      "name": "PDF Metadata",
+      "desc": "Edit title, author, subject, keywords."
+    },
+    "pdf-extract-images": {
+      "name": "Extract PDF Images",
+      "desc": "Pull embedded images out of a PDF."
+    },
+    "image-compress": {
+      "name": "Compress Image",
+      "desc": "Shrink JPG, PNG and WebP images."
+    },
+    "image-resize": {
+      "name": "Resize Image",
+      "desc": "Resize images to exact dimensions."
+    },
+    "image-convert": {
+      "name": "Convert Image",
+      "desc": "Convert between PNG, JPG and WebP."
+    },
+    "heic-to-jpg": {
+      "name": "HEIC to JPG",
+      "desc": "Convert iPhone HEIC photos to JPG."
+    },
+    "image-rotate": {
+      "name": "Rotate Image",
+      "desc": "Rotate an image 90°, 180° or 270°."
+    },
+    "image-crop": {
+      "name": "Crop Image",
+      "desc": "Crop an image to a custom region."
+    },
+    "image-add-watermark": {
+      "name": "Image Watermark",
+      "desc": "Stamp a text watermark on an image."
+    },
+    "excel-to-csv": {
+      "name": "Excel to CSV",
+      "desc": "Export Excel sheets to CSV."
+    },
+    "csv-to-excel": {
+      "name": "CSV to Excel",
+      "desc": "Turn a CSV into a .xlsx workbook."
+    },
+    "excel-to-pdf": {
+      "name": "Excel to PDF",
+      "desc": "Turn a spreadsheet into a PDF table."
+    },
+    "docx-preview": {
+      "name": "DOCX Preview",
+      "desc": "Preview a .docx file in your browser."
+    },
+    "text-to-pdf": {
+      "name": "Text to PDF",
+      "desc": "Turn plain text into a clean PDF."
+    },
+    "markdown-to-pdf": {
+      "name": "Markdown to PDF",
+      "desc": "Render Markdown into a styled PDF."
+    },
+    "json-to-csv": {
+      "name": "JSON to CSV",
+      "desc": "Flatten JSON array into CSV."
+    },
+    "csv-to-json": {
+      "name": "CSV to JSON",
+      "desc": "Turn CSV data into JSON."
+    },
+    "yaml-to-json": {
+      "name": "YAML to JSON",
+      "desc": "Convert YAML to JSON."
+    },
+    "json-to-yaml": {
+      "name": "JSON to YAML",
+      "desc": "Convert JSON to YAML."
+    },
+    "password-generator": {
+      "name": "Password Generator",
+      "desc": "Create strong, random passwords."
+    },
+    "qr-generator": {
+      "name": "QR Generator",
+      "desc": "Make a downloadable QR code."
+    },
+    "qr-reader": {
+      "name": "QR Reader",
+      "desc": "Scan a QR code via webcam or image."
+    },
+    "hash-generator": {
+      "name": "Hash Generator",
+      "desc": "MD5, SHA-1, SHA-256, SHA-512."
+    },
+    "zip-create": {
+      "name": "Create ZIP",
+      "desc": "Zip multiple files into an archive."
+    },
+    "zip-extract": {
+      "name": "Extract ZIP",
+      "desc": "Unzip an archive in your browser."
+    },
+    "file-rename-batch": {
+      "name": "Batch Rename Files",
+      "desc": "Rename many files, then download as ZIP."
+    },
+    "text-tools": {
+      "name": "Text Tools",
+      "desc": "Case convert, count, slugify, lorem."
+    },
+    "color-picker": {
+      "name": "Color Picker",
+      "desc": "Pick colors + build a palette."
+    },
+    "base64": {
+      "name": "Base64 Encode/Decode",
+      "desc": "Encode or decode Base64 (text + file)."
+    },
+    "url-encode-decode": {
+      "name": "URL Encode/Decode",
+      "desc": "Percent-encode or decode URLs."
+    },
+    "regex-tester": {
+      "name": "Regex Tester",
+      "desc": "Test regular expressions live."
+    }
+  }
+}

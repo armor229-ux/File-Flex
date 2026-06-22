@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="FileFlex">
+  <title>FileFlex</title>
+  <rect width="512" height="512" rx="112" fill="#E50914"/>
+  <!-- bottom sheet (offset, 55% opacity) -->
+  <rect x="156" y="144" width="212" height="252" rx="32" fill="#ffffff" fillOpacity="0.55"/>
+  <!-- top sheet (full white) -->
+  <rect x="140" y="128" width="212" height="252" rx="32" fill="#ffffff"/>
+  <!-- corner fold on top sheet -->
+  <path d="M312 128 L352 128 L352 168 Z" fill="#ffffff" fillOpacity="0.45"/>
+  <path d="M312 128 L352 168 L312 168 Z" fill="#ffffff" fillOpacity="0.7"/>
+</svg>

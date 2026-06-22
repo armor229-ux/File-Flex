@@ -1,0 +1,355 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-bebas);
+  --font-mono: var(--font-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+/* FileFlex — LIGHT default theme (white + red) */
+:root {
+  --radius: 0.875rem;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --background: #FFFFFF;
+  --foreground: #0A0A0A;
+  --card: #FFFFFF;
+  --card-foreground: #0A0A0A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0A0A0A;
+  --primary: #E50914;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F7F7F8;
+  --secondary-foreground: #0A0A0A;
+  --muted: #F7F7F8;
+  --muted-foreground: #5A5A5A;
+  --accent: #F7F7F8;
+  --accent-foreground: #0A0A0A;
+  --destructive: #E50914;
+  --border: #E5E5E5;
+  --input: #E5E5E5;
+  --ring: #E50914;
+  --brand: #E50914;
+  --brand-hover: #F40612;
+  --chart-1: #E50914;
+  --chart-2: #F40612;
+  --chart-3: #FF4D5A;
+  --chart-4: #f59e0b;
+  --chart-5: #10b981;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0A0A0A;
+  --sidebar-primary: #E50914;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F7F7F8;
+  --sidebar-accent-foreground: #0A0A0A;
+  --sidebar-border: #E5E5E5;
+  --sidebar-ring: #E50914;
+}
+
+/* FileFlex — DARK theme (near-black + red) */
+.dark {
+  --background: #0A0A0A;
+  --foreground: #FFFFFF;
+  --card: #141414;
+  --card-foreground: #FFFFFF;
+  --popover: #141414;
+  --popover-foreground: #FFFFFF;
+  --primary: #E50914;
+  --primary-foreground: #FFFFFF;
+  --secondary: #1F1F1F;
+  --secondary-foreground: #FFFFFF;
+  --muted: #1F1F1F;
+  --muted-foreground: #B3B3B3;
+  --accent: #1F1F1F;
+  --accent-foreground: #FFFFFF;
+  --destructive: #E50914;
+  --border: #ffffff14;
+  --input: #ffffff1f;
+  --ring: #E50914;
+  --brand: #E50914;
+  --brand-hover: #F40612;
+  --chart-1: #E50914;
+  --chart-2: #F40612;
+  --chart-3: #FF4D5A;
+  --chart-4: #f59e0b;
+  --chart-5: #10b981;
+  --sidebar: #141414;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #E50914;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1F1F1F;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #ffffff14;
+  --sidebar-ring: #E50914;
+}
+
+@layer base {
+  :root {
+    --z-popover: 100;
+  }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+      "Noto Sans", "Noto Sans Arabic", "Noto Sans SC", "Noto Sans JP",
+      "Noto Sans KR", "Noto Sans Devanagari", "Noto Sans Bengali",
+      "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Malayalam",
+      "Noto Sans Kannada", "Noto Sans Thai", "Noto Sans Hebrew", sans-serif;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  /* Nav items never wrap, regardless of language */
+  .nav-item {
+    white-space: nowrap;
+  }
+  /* Arabic: no uppercase transform, no letter-spacing, adjusted word-spacing */
+  html:lang(ar) .nav-item {
+    text-transform: none;
+    letter-spacing: 0;
+    word-spacing: 0.05em;
+  }
+  /* Arabic H1: use Inter instead of Bebas Neue (Bebas lacks Arabic glyphs) */
+  html:lang(ar) h1 {
+    font-family: Inter, "Noto Sans Arabic", sans-serif !important;
+    letter-spacing: 0 !important;
+  }
+  /* Logo lock — always LTR, never flips in RTL */
+  .logo-lock {
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+    text-align: left;
+    transform: none !important;
+  }
+  [dir="rtl"] .logo-lock {
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+  }
+  [dir="rtl"] .logo-lock svg {
+    transform: none !important;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: color-mix(in srgb, var(--card) 70%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted-foreground) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--muted-foreground);
+    border-radius: 9999px;
+    opacity: 0.4;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--ring);
+  }
+  /* Subtle animated red glow — GPU-friendly, premium */
+  .hero-glow {
+    background: radial-gradient(60% 50% at 50% 0%, rgba(229, 9, 20, 0.10), transparent 70%);
+    animation: glow-breathe 8s ease-in-out infinite;
+  }
+  .dark .hero-glow {
+    background: radial-gradient(60% 50% at 50% 0%, rgba(229, 9, 20, 0.18), transparent 70%);
+  }
+}
+
+@keyframes glow-breathe {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ================================================================== */
+/* Apps popover hover bridge — invisible strip that spans the gap       */
+/* between the 9-dot trigger and the popover panel so the cursor can    */
+/* travel between them without tripping the close timer. Must capture   */
+/* pointer events (no pointer-events: none).                            */
+/* ================================================================== */
+.apps-popover-bridge {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  /* invisible but clickable */
+  background: transparent;
+}
+
+/* ================================================================== */
+/* AppsMenu hover bridge — invisible strip spanning the gap between     */
+/* the 9-dot trigger and the popover panel so the cursor can travel     */
+/* without tripping the close timer. Must capture pointer events.       */
+/* Height matches the PopoverContent sideOffset (10px).                 */
+/* ================================================================== */
+.apps-bridge {
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: transparent;
+}
+
+/* ================================================================== */
+/* Shared menu hover bridge — used by useHoverIntent-driven popovers.   */
+/* Invisible strip spanning the gap between the trigger and the popover  */
+/* panel so the cursor can travel without tripping the close timer.     */
+/* Must capture pointer events (no pointer-events: none).               */
+/* ================================================================== */
+.menu-bridge {
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: transparent;
+}
+
+/* ================================================================== */
+/* Hero — H1 word-entrance + shimmer sweep + red halo + pill breath     */
+/* (Scoped: only affects .pill-breath, .hero-h1-shimmer, .hero-h1-halo) */
+/* ================================================================== */
+@keyframes pill-breath {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229,9,20,0); }
+  50%      { box-shadow: 0 0 24px 6px rgba(229,9,20,0.18); }
+}
+.pill-breath { animation: pill-breath 4.5s ease-in-out infinite; }
+
+@keyframes hero-h1-shimmer-sweep {
+  0%   { transform: translateX(-120%); opacity: 0; }
+  20%  { opacity: 0.9; }
+  100% { transform: translateX(120%); opacity: 0; }
+}
+.hero-h1-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hero-h1-shimmer::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 30%;
+  transform: translateX(-120%);
+  background: linear-gradient(
+    120deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.18) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  mix-blend-mode: screen;
+  animation: hero-h1-shimmer-sweep 6s ease-in-out infinite;
+  animation-delay: 1.6s;
+  will-change: transform, opacity;
+}
+
+.hero-h1-halo {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 120%;
+  width: 70%;
+  margin-inline: auto;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(229,9,20,0.22) 0%, rgba(229,9,20,0) 70%);
+  filter: blur(40px);
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-breath,
+  .hero-h1-shimmer::before { animation: none !important; }
+}
+
+/* ================================================================== */
+/* Menu scroll container — premium thin scrollbar for the All PDF Tools */
+/* popover's internal scroll area (.menu-scroll). Scoped: only affects  */
+/* elements with this class; nothing else changes.                      */
+/* ================================================================== */
+.menu-scroll { scrollbar-width: thin; scrollbar-color: rgba(120,120,120,0.35) transparent; }
+.menu-scroll::-webkit-scrollbar { width: 8px; }
+.menu-scroll::-webkit-scrollbar-thumb { background: rgba(120,120,120,0.35); border-radius: 8px; }
+.menu-scroll::-webkit-scrollbar-thumb:hover { background: rgba(120,120,120,0.55); }
+.menu-scroll::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-bridge { transition: none !important; }
+}
