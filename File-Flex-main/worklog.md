@@ -142,3 +142,39 @@ Work Log:
 
 Stage Summary:
 - Added AdSense auto-ads script to layout.tsx <head> via next/script (afterInteractive). Correct publisher ID. google-site-verification meta intact. CMP scripts intact. ESLint clean. One file modified, 6 lines added, no other changes.
+
+---
+Task ID: 6
+Agent: main
+Task: Scoped task — Add a blog section to FileFlex with 5 SEO-optimized articles (800+ words each). Allowed to create: src/lib/blog-posts.ts, src/app/blog/page.tsx, src/app/blog/[slug]/page.tsx. Allowed to modify: src/app/sitemap.ts (add /blog + 5 article URLs, keep existing 6 unchanged) and main nav (add Blog link). Do NOT change existing UI, copy, or any other behavior. No new dependencies.
+
+Work Log:
+- Explored existing site design system: globals.css (red `#E50914` primary, Inter + Bebas Neue fonts, dark/light theme tokens), LegalLayout pattern (prose-style Tailwind arbitrary variants), About/Contact page typography, Solutions/[slug] page pattern (generateStaticParams + generateMetadata + ArrowRight icons), existing Card/Badge UI components, nav.tsx structure (desktop NavLink + mobile Sheet accordion "More" section with hard-coded English labels).
+- Confirmed `marked` (^18.0.5) is already in package.json + node_modules — used it for markdown rendering (no new deps).
+- Created `src/lib/blog-posts.ts` — typed `BlogPost` interface + `blogPosts` array of 5 articles. Each article: slug, title (50–60 chars), excerpt (150–160 chars), ISO date, author "FileFlex Team", readTime, category, tags, markdown content 800+ words. Helper functions: getPostBySlug, allBlogSlugs, formatBlogDate.
+- 5 articles written with original, genuinely useful content:
+  1. how-to-merge-pdf-files (1228 words, PDF Guides, 2025-01-15)
+  2. compress-pdf-without-quality-loss (1233 words, PDF Guides, 2025-02-03)
+  3. password-protect-pdf-guide (1255 words, PDF Guides, 2025-02-20)
+  4. image-compression-explained (1368 words, Image Guides, 2025-03-10)
+  5. why-you-need-password-manager (1359 words, Security, 2025-03-25)
+- Each article has H1 + multiple H2s/H3s + numbered lists + bullet points + natural internal links to /tools/* (pdf-merge, pdf-compress, pdf-password, pdf-split, pdf-rotate, pdf-unlock, image-compress, image-convert, image-resize, password-generator, etc.).
+- Inline `code` backticks in markdown content (e.g. `pdf-lib`, `marked`, `crypto.getRandomValues`) properly escaped as \` inside TS template literals (10 occurrences).
+- Created `src/app/blog/page.tsx` — server component, exports `metadata` (title "Blog - FileFlex", description, canonical /blog, OG + Twitter cards). Grid layout (1/2/3 cols responsive) with 5 article cards. Each card: gradient header strip with category Badge, title (line-clamp-2), excerpt (line-clamp-3), meta row (Calendar date + Clock read time), tags, "Read article" footer. Includes Blog JSON-LD schema. CTA card at bottom links to /tools. Uses existing Card, Badge, lucide-react icons, and Tailwind classes consistent with /about and /contact.
+- Created `src/app/blog/[slug]/page.tsx` — server component with generateStaticParams (pre-generates all 5 article paths) and async generateMetadata (per-post title, description, keywords, canonical, OG article type with publishedTime/authors/tags, Twitter card). Renders markdown to HTML server-side via `marked.parse()`. Uses Tailwind arbitrary variants for prose styling ([&_h2]:text-2xl [&_h3]:text-lg [&_ul]:list-disc [&_a]:text-primary etc., matching LegalLayout pattern). Article header: category Badge, title H1 (Bebas Neue font), excerpt, byline (User + Calendar + Clock icons in border-y row). Body: rendered HTML with `[&_h1]:hidden` to prevent duplicate H1 (page header H1 + markdown H1). Footer: tags, inline CTA card, next-article link. Includes BlogPosting JSON-LD schema.
+- Updated `src/app/sitemap.ts` — kept the existing 6 URLs unchanged (/, /tools/pdf-merge, /tools/pdf-compress, /tools/pdf-password, /tools/image-compress, /tools/password-generator). Added /blog (priority 0.8, weekly) and 5 article URLs (/blog/{slug}, priority 0.7, monthly, lastModified = post.date). Returns combined array.
+- Updated `src/components/nav.tsx` — added `<NavLink href="/blog">Blog</NavLink>` to desktop nav (after the AllPdfTools MegaTrigger, matching existing NavLink styling: uppercase tracking-wider, hover underline animation). Added `<Link href="/blog">Blog</Link>` to mobile Sheet's "More" section as the first item (matching existing pattern of hard-coded English labels in that section — "Help Center", "Contact", etc.).
+- Verified: `bun run lint` → exit 0, zero new warnings (only 4 pre-existing warnings in untouched files: image-crop.tsx, password-generator.tsx, qr-generator.tsx, i18n.tsx).
+- Verified: `bun run build` → ✓ Compiled successfully, 70/70 static pages generated. `/blog` shows as ○ (Static). `/blog/[slug]` shows as ● (SSG) with all 5 paths pre-generated.
+- Verified all 9 routes return HTTP 200: /, /blog, /blog/how-to-merge-pdf-files, /blog/compress-pdf-without-quality-loss, /blog/password-protect-pdf-guide, /blog/image-compression-explained, /blog/why-you-need-password-manager, /tools/pdf-merge, /sitemap.xml.
+- Verified /blog index: title "Blog - FileFlex | FileFlex", 5 article cards rendered with correct hrefs.
+- Verified sample article (how-to-merge-pdf-files): title "How to Merge PDF Files Online for Free in 2025 | FileFlex Blog | FileFlex", 7 H2s + 19 H3s + 1 visible H1 (markdown H1 hidden via [&_h1]:hidden to avoid duplicate), 25 internal /tools/* links (multiple unique destinations), 2 JSON-LD scripts (BlogPosting + layout's existing CMP-related), 1 Back-to-Blog link, meta description present.
+- Verified nav: homepage HTML contains `href="/blog">Blog` exactly once in the desktop nav.
+- Verified sitemap.xml: served `public/sitemap.xml` (auto-regenerated by next-sitemap postbuild) now contains /blog + all 5 article URLs + the existing 6 URLs from app/sitemap.ts. Both files are consistent.
+- Word-count script at /home/z/my-project/scripts/count_blog_words.py confirms all 5 articles are 800+ words (range 1228–1368).
+
+Stage Summary:
+- 3 files created: src/lib/blog-posts.ts (5 SEO articles, ~6444 total words), src/app/blog/page.tsx (blog index), src/app/blog/[slug]/page.tsx (article page).
+- 2 files modified: src/app/sitemap.ts (+6 URLs: /blog + 5 article slugs, existing 6 URLs unchanged), src/components/nav.tsx (+2 Blog links: desktop NavLink + mobile Sheet link).
+- No existing UI/copy/behavior changed beyond the nav Blog link addition. No new dependencies (used existing `marked` lib).
+- All routes HTTP 200. ESLint clean (zero new warnings). Build clean (70/70 pages). Sitemap contains all blog URLs. Articles render with proper typography, JSON-LD, internal tool links, and SEO metadata.

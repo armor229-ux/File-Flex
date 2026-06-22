@@ -1,0 +1,963 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import Link from "next/link";
+     5→import { usePathname } from "next/navigation";
+     6→import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+     7→import { Search, Menu, ChevronDown, ArrowRight, Languages, ChevronRight, Check, RotateCcw } from "lucide-react";
+     8→import { Button } from "@/components/ui/button";
+     9→import {
+    10→  Popover,
+    11→  PopoverContent,
+    12→  PopoverTrigger,
+    13→} from "@/components/ui/popover";
+    14→import {
+    15→  Sheet,
+    16→  SheetContent,
+    17→  SheetHeader,
+    18→  SheetTitle,
+    19→} from "@/components/ui/sheet";
+    20→import {
+    21→  Accordion,
+    22→  AccordionContent,
+    23→  AccordionItem,
+    24→  AccordionTrigger,
+    25→} from "@/components/ui/accordion";
+    26→import { Logo } from "@/components/Logo";
+    27→import { AppsMenu } from "@/components/header/AppsMenu";
+    28→import { ThemeToggle } from "@/components/theme-toggle";
+    29→import { tools, categoryOrder, categoryLabels } from "@/lib/tools";
+    30→import {
+    31→  convertPdfMenu,
+    32→  allToolsMenu,
+    33→  appsMenu,
+    34→  type MegaMenuColumn,
+    35→} from "@/lib/mega-menu";
+    36→import { useToast } from "@/hooks/use-toast";
+    37→import { useI18n, BUNDLED_LOCALES } from "@/lib/i18n";
+    38→import { cn } from "@/lib/utils";
+    39→
+    40→type MenuKey = "convert" | "allTools";
+    41→
+    42→export function Nav() {
+    43→  const [sheetOpen, setSheetOpen] = React.useState(false);
+    44→
+    45→  return (
+    46→    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-lg">
+    47→      <SharedMegaNav onMobileOpen={() => setSheetOpen(true)} />
+    48→      <MobileSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+    49→    </header>
+    50→  );
+    51→}
+    52→
+    53→/* ================================================================== */
+    54→/* SHARED MEGA MENU NAV                                               */
+    55→/* ================================================================== */
+    56→function SharedMegaNav({ onMobileOpen }: { onMobileOpen: () => void }) {
+    57→  const [activeMenu, setActiveMenu] = React.useState<MenuKey | null>(null);
+    58→  const { t } = useI18n();
+    59→  const reduceMotion = useReducedMotion();
+    60→  const openTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    61→  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    62→  const navRef = React.useRef<HTMLDivElement>(null);
+    63→  const panelRef = React.useRef<HTMLDivElement>(null);
+    64→  // Counter-based hover tracking: increments on every mouseenter (trigger or
+    65→  // panel), decrements on every mouseleave. Close is scheduled ONLY when the
+    66→  // counter reaches 0 — i.e. the cursor is over NEITHER the trigger nor the
+    67→  // panel. This is more robust than cancelClose-before-scheduleClose because
+    68→  // there is no timer to orphan: multiple rapid enter/leave events just move
+    69→  // the counter, and the close timer is only ever set when hoverCount===0.
+    70→  const hoverCount = React.useRef(0);
+    71→
+    72→  const cancelOpen = () => {
+    73→    if (openTimer.current) {
+    74→      clearTimeout(openTimer.current);
+    75→      openTimer.current = null;
+    76→    }
+    77→  };
+    78→  const cancelClose = () => {
+    79→    if (closeTimer.current) {
+    80→      clearTimeout(closeTimer.current);
+    81→      closeTimer.current = null;
+    82→    }
+    83→  };
+    84→
+    85→  const handleTriggerEnter = (key: MenuKey) => {
+    86→    hoverCount.current++;
+    87→    cancelClose();
+    88→    if (activeMenu === key) return;
+    89→    if (activeMenu !== null) {
+    90→      // Panel already open — swap content instantly (no close/reopen)
+    91→      setActiveMenu(key);
+    92→    } else if (reduceMotion) {
+    93→      // Reduced motion: open instantly, no delay
+    94→      setActiveMenu(key);
+    95→    } else {
+    96→      // Panel closed — schedule open with 120ms delay
+    97→      cancelOpen();
+    98→      openTimer.current = setTimeout(() => setActiveMenu(key), 120);
+    99→    }
+   100→  };
+   101→
+   102→  const handleTriggerLeave = () => {
+   103→    hoverCount.current = Math.max(0, hoverCount.current - 1);
+   104→    if (hoverCount.current > 0) return;
+   105→    cancelOpen();
+   106→    cancelClose();
+   107→    if (reduceMotion) {
+   108→      setActiveMenu(null);
+   109→      return;
+   110→    }
+   111→    // 350ms grace prevents the panel from closing while the cursor travels
+   112→    // toward items (trigger → bridge → panel). The counter reaching 0 means
+   113→    // the cursor left BOTH the trigger and the panel; the grace period
+   114→    // covers the transit time through the hover bridge.
+   115→    closeTimer.current = setTimeout(() => setActiveMenu(null), 350);
+   116→  };
+   117→
+   118→  const handlePanelEnter = () => {
+   119→    hoverCount.current++;
+   120→    cancelClose();
+   121→  };
+   122→
+   123→  const handlePanelLeave = () => {
+   124→    hoverCount.current = Math.max(0, hoverCount.current - 1);
+   125→    if (hoverCount.current > 0) return;
+   126→    cancelClose();
+   127→    if (reduceMotion) {
+   128→      setActiveMenu(null);
+   129→      return;
+   130→    }
+   131→    closeTimer.current = setTimeout(() => setActiveMenu(null), 350);
+   132→  };
+   133→
+   134→  // Click-to-toggle (mouse + touch). For the AllTools trigger this lets touch
+   135→  // users tap to open; for mouse users it toggles. The hover handlers continue
+   136→  // to work alongside this — if the cursor is on the trigger, hoverCount>0
+   137→  // keeps the panel open even after a click-toggle-close would fire.
+   138→  const handleTriggerClick = (key: MenuKey) => {
+   139→    cancelOpen();
+   140→    cancelClose();
+   141→    setActiveMenu((prev) => (prev === key ? null : key));
+   142→  };
+   143→
+   144→  React.useEffect(
+   145→    () => () => {
+   146→      cancelOpen();
+   147→      cancelClose();
+   148→    },
+   149→    []
+   150→  );
+   151→
+   152→  // Close the mega panel on ANY client-side route change. This is the
+   153→  // definitive guarantee that clicking an item closes the panel even if the
+   154→  // item's onClick races with Next.js client-side navigation, a programmatic
+   155→  // router.push, or a browser back/forward. Covers the "click navigates but
+   156→  // the dropdown stays open" symptom. (The item's onClick={onClose} already
+   157→  // closes immediately on click; this effect catches everything else.)
+   158→  const pathname = usePathname();
+   159→  React.useEffect(() => {
+   160→    // Clear any pending timers directly (refs) to avoid stale-closure /
+   161→    // exhaustive-deps churn — `cancelOpen`/`cancelClose` are recreated each
+   162→    // render and would otherwise need to be deps.
+   163→    if (openTimer.current) {
+   164→      clearTimeout(openTimer.current);
+   165→      openTimer.current = null;
+   166→    }
+   167→    if (closeTimer.current) {
+   168→      clearTimeout(closeTimer.current);
+   169→      closeTimer.current = null;
+   170→    }
+   171→    hoverCount.current = 0;
+   172→    setActiveMenu(null);
+   173→  }, [pathname]);
+   174→
+   175→  // Track the trigger button for the currently-active menu so Escape can
+   176→  // return focus to it (a11y: keyboard users get their focus back).
+   177→  const convertTriggerRef = React.useRef<HTMLButtonElement>(null);
+   178→  const allToolsTriggerRef = React.useRef<HTMLButtonElement>(null);
+   179→
+   180→  // Esc closes the panel from anywhere (not just the AllTools search input)
+   181→  // and returns focus to the active trigger. The shared-panel design otherwise
+   182→  // only binds Esc inside the search input's onKeyDown, leaving the Convert
+   183→  // panel with no Esc handling — this window listener closes that gap.
+   184→  React.useEffect(() => {
+   185→    if (activeMenu === null) return;
+   186→    const onKeyDown = (e: KeyboardEvent) => {
+   187→      if (e.key === "Escape") {
+   188→        e.preventDefault();
+   189→        if (openTimer.current) {
+   190→          clearTimeout(openTimer.current);
+   191→          openTimer.current = null;
+   192→        }
+   193→        if (closeTimer.current) {
+   194→          clearTimeout(closeTimer.current);
+   195→          closeTimer.current = null;
+   196→        }
+   197→        hoverCount.current = 0;
+   198→        setActiveMenu(null);
+   199→        const ref =
+   200→          activeMenu === "convert"
+   201→            ? convertTriggerRef.current
+   202→            : activeMenu === "allTools"
+   203→            ? allToolsTriggerRef.current
+   204→            : null;
+   205→        ref?.focus();
+   206→      }
+   207→    };
+   208→    window.addEventListener("keydown", onKeyDown);
+   209→    return () => window.removeEventListener("keydown", onKeyDown);
+   210→  }, [activeMenu]);
+   211→
+   212→  // Lock page scroll while the All PDF Tools popover is open. The Convert
+   213→  // menu is short and doesn't need a scroll lock; only the AllTools grid
+   214→  // (44 items across 4 columns) overflows and must scroll internally.
+   215→  // Restores the exact previous body styles on close/unmount — no leftover
+   216→  // overflow lock and no jump to top. Compensates the scrollbar width with
+   217→  // paddingRight so the page doesn't shift when the lock toggles.
+   218→  React.useEffect(() => {
+   219→    if (typeof window === "undefined") return;
+   220→    if (activeMenu !== "allTools") return;
+   221→    const body = document.body;
+   222→    const html = document.documentElement;
+   223→    const prevOverflow = body.style.overflow;
+   224→    const prevPaddingRight = body.style.paddingRight;
+   225→    const prevScrollBehavior = html.style.scrollBehavior;
+   226→    const sw = window.innerWidth - html.clientWidth;
+   227→    body.style.overflow = "hidden";
+   228→    if (sw > 0) body.style.paddingRight = sw + "px";
+   229→    html.style.scrollBehavior = "auto";
+   230→    return () => {
+   231→      body.style.overflow = prevOverflow;
+   232→      body.style.paddingRight = prevPaddingRight;
+   233→      html.style.scrollBehavior = prevScrollBehavior;
+   234→    };
+   235→  }, [activeMenu]);
+   236→
+   237→  const columns: MegaMenuColumn[] = activeMenu === "convert" ? convertPdfMenu : allToolsMenu;
+   238→  const showSearch = activeMenu === "allTools";
+   239→
+   240→  return (
+   241→    <>
+   242→      <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-8 px-4 sm:px-6">
+   243→        {/* LEFT — logo (always LTR, never flips in RTL) */}
+   244→        <Link
+   245→          href="/"
+   246→          className="logo-lock flex shrink-0 items-center gap-2 rounded-lg focus-visible:ring-2 focus-visible:ring-ring"
+   247→          aria-label="FileFlex home"
+   248→          dir="ltr"
+   249→        >
+   250→          <Logo className="h-7 w-auto" size={28} />
+   251→        </Link>
+   252→
+   253→        {/* CENTER — horizontal nav (desktop) */}
+   254→        <nav
+   255→          ref={navRef}
+   256→          className="hidden items-center justify-center gap-1 lg:flex"
+   257→          aria-label="Main navigation"
+   258→          onMouseLeave={handleTriggerLeave}
+   259→        >
+   260→          <NavLink href="/tools/pdf-merge">{t("nav.mergePdf")}</NavLink>
+   261→          <NavLink href="/tools/pdf-split">{t("nav.splitPdf")}</NavLink>
+   262→          <NavLink href="/tools/pdf-compress">{t("nav.compressPdf")}</NavLink>
+   263→          <MegaTrigger
+   264→            label={t("nav.convertPdf")}
+   265→            isActive={activeMenu === "convert"}
+   266→            onEnter={() => handleTriggerEnter("convert")}
+   267→            onLeave={handleTriggerLeave}
+   268→            triggerRef={convertTriggerRef}
+   269→          />
+   270→          <MegaTrigger
+   271→            label={t("nav.allPdfTools")}
+   272→            isActive={activeMenu === "allTools"}
+   273→            onEnter={() => handleTriggerEnter("allTools")}
+   274→            onLeave={handleTriggerLeave}
+   275→            onClick={() => handleTriggerClick("allTools")}
+   276→            triggerRef={allToolsTriggerRef}
+   277→          />
+   278→        </nav>
+   279→
+   280→        {/* RIGHT — theme toggle + 9-dot Apps popover (desktop), hamburger (mobile) */}
+   281→        <div className="flex items-center justify-end gap-3">
+   282→          <div className="hidden items-center gap-3 lg:flex">
+   283→            <ThemeToggle />
+   284→            <span className="h-6 w-px bg-border dark:bg-transparent" aria-hidden />
+   285→            <AppsMenu />
+   286→          </div>
+   287→          <Button
+   288→            variant="ghost"
+   289→            size="icon"
+   290→            onClick={onMobileOpen}
+   291→            aria-label="Open menu"
+   292→            className="lg:hidden"
+   293→          >
+   294→            <Menu className="size-5" />
+   295→          </Button>
+   296→        </div>
+   297→      </div>
+   298→
+   299→      {/* Shared mega panel + hover bridge */}
+   300→      <AnimatePresence>
+   301→        {activeMenu !== null && (
+   302→          <motion.div
+   303→            ref={panelRef}
+   304→            className="absolute inset-x-0 top-[4.25rem] z-40 px-4"
+   305→            initial={reduceMotion ? false : { opacity: 0, y: -6 }}
+   306→            animate={{ opacity: 1, y: 0 }}
+   307→            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+   308→            transition={reduceMotion ? { duration: 0 } : { duration: 0.16, ease: "easeOut" }}
+   309→            onMouseEnter={handlePanelEnter}
+   310→            onMouseLeave={handlePanelLeave}
+   311→            role="menu"
+   312→          >
+   313→            {/* Hover bridge — FIRST child of the panel. Positioned just above
+   314→                the panel's top edge (top:-12px) so it spans the gap between
+   315→                the nav bar (h-16) and the panel (top:4.25rem). The cursor can
+   316→                travel trigger → bridge → panel without the counter dropping to
+   317→                0, so no close timer is ever scheduled during transit. */}
+   318→            <div
+   319→              className="menu-bridge"
+   320→              onMouseEnter={handlePanelEnter}
+   321→              onMouseLeave={handlePanelLeave}
+   322→              aria-hidden
+   323→            />
+   324→            <div className="mx-auto max-w-5xl">
+   325→              <MegaPanel
+   326→                columns={columns}
+   327→                showSearch={showSearch}
+   328→                onClose={() => {
+   329→                  cancelClose();
+   330→                  hoverCount.current = 0;
+   331→                  setActiveMenu(null);
+   332→                }}
+   333→                key={activeMenu}
+   334→              />
+   335→            </div>
+   336→          </motion.div>
+   337→        )}
+   338→      </AnimatePresence>
+   339→    </>
+   340→  );
+   341→}
+   342→
+   343→function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+   344→  return (
+   345→    <Link
+   346→      href={href}
+   347→      className="nav-item relative rounded-md px-3 py-2 text-sm font-bold uppercase tracking-wider text-foreground/80 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+   348→    >
+   349→      {children}
+   350→      <span className="absolute inset-x-3 -bottom-px h-0.5 origin-left scale-x-0 rounded-full bg-primary transition-transform duration-200 hover:scale-x-100" />
+   351→    </Link>
+   352→  );
+   353→}
+   354→
+   355→function MegaTrigger({
+   356→  label,
+   357→  isActive,
+   358→  onEnter,
+   359→  onLeave,
+   360→  onClick,
+   361→  triggerRef,
+   362→}: {
+   363→  label: string;
+   364→  isActive: boolean;
+   365→  onEnter: () => void;
+   366→  onLeave: () => void;
+   367→  onClick?: () => void;
+   368→  triggerRef?: React.RefObject<HTMLButtonElement>;
+   369→}) {
+   370→  return (
+   371→    <button
+   372→      type="button"
+   373→      ref={triggerRef}
+   374→      onMouseEnter={onEnter}
+   375→      onMouseLeave={onLeave}
+   376→      onFocus={onEnter}
+   377→      onBlur={onLeave}
+   378→      onClick={onClick}
+   379→      className={cn(
+   380→        "nav-item flex items-center gap-1 rounded-md px-3 py-2 text-sm font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+   381→        isActive ? "text-foreground" : "text-foreground/80 hover:text-foreground"
+   382→      )}
+   383→      aria-expanded={isActive}
+   384→      aria-haspopup="true"
+   385→    >
+   386→      {label}
+   387→      <ChevronDown
+   388→        className={cn(
+   389→          "size-3.5 transition-transform duration-200",
+   390→          isActive && "rotate-180"
+   391→        )}
+   392→      />
+   393→    </button>
+   394→  );
+   395→}
+   396→
+   397→/* ================================================================== */
+   398→/* LANGUAGE ROW — 5 languages, Radix Popover, opaque, no auto-translate */
+   399→/* (Exported so the header's AppsPopover component can reuse it.)        */
+   400→/* ================================================================== */
+   401→export function LanguageRow({
+   402→  langOpen,
+   403→  setLangOpen,
+   404→}: {
+   405→  langOpen: boolean;
+   406→  setLangOpen: (v: boolean) => void;
+   407→}) {
+   408→  const { locale, setLocale, t } = useI18n();
+   409→  const [langs, setLangs] = React.useState<{ code: string; english: string; native: string; dir: string }[] | null>(null);
+   410→
+   411→  React.useEffect(() => {
+   412→    import("@/lib/languages").then((m) => setLangs(m.languages));
+   413→  }, []);
+   414→
+   415→  const currentNative = React.useMemo(() => {
+   416→    if (!langs) return "English";
+   417→    return langs.find((l) => l.code === locale)?.native ?? "English";
+   418→  }, [langs, locale]);
+   419→
+   420→  const selectLang = (code: string, native: string) => {
+   421→    setLocale(code);
+   422→    setLangOpen(false);
+   423→  };
+   424→
+   425→  return (
+   426→    <Popover open={langOpen} onOpenChange={setLangOpen} modal={false}>
+   427→      <PopoverTrigger asChild>
+   428→        <button
+   429→          type="button"
+   430→          className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+   431→          aria-haspopup="listbox"
+   432→          aria-expanded={langOpen}
+   433→          role="menuitem"
+   434→          onMouseEnter={() => setLangOpen(true)}
+   435→          onClick={() => setLangOpen(!langOpen)}
+   436→          onKeyDown={(e) => {
+   437→            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLangOpen(!langOpen); }
+   438→            if (e.key === "Escape") { e.preventDefault(); setLangOpen(false); }
+   439→          }}
+   440→        >
+   441→          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10"><Languages className="size-4 text-primary" /></span>
+   442→          <span className="flex min-w-0 flex-1 items-center justify-between">
+   443→            <span className="flex min-w-0 flex-col">
+   444→              <span className="text-sm font-semibold">{t("nav.language")}</span>
+   445→              <span className="truncate text-xs text-muted-foreground">{currentNative}</span>
+   446→            </span>
+   447→            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+   448→          </span>
+   449→        </button>
+   450→      </PopoverTrigger>
+   451→      <PopoverContent
+   452→        side="right"
+   453→        align="start"
+   454→        sideOffset={8}
+   455→        collisionPadding={16}
+   456→        className="z-[100] w-[260px] rounded-2xl border border-border p-3 shadow-[0_16px_40px_rgba(0,0,0,0.10),0_2px_4px_rgba(0,0,0,0.04)] backdrop-blur-[8px]"
+   457→        style={{ backgroundColor: "var(--popover)" }}
+   458→        onOpenAutoFocus={(e) => e.preventDefault()}
+   459→        onKeyDown={(e) => {
+   460→          if (e.key === "Escape") { e.preventDefault(); setLangOpen(false); }
+   461→        }}
+   462→      >
+   463→        <div role="listbox" aria-label={t("nav.selectLanguage")}>
+   464→          {(langs ?? []).map((l) => (
+   465→            <button
+   466→              key={l.code}
+   467→              type="button"
+   468→              role="option"
+   469→              aria-selected={l.code === locale}
+   470→              className="grid w-full grid-cols-[28px_1fr_auto] items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+   471→              onClick={() => selectLang(l.code, l.native)}
+   472→            >
+   473→              <span className="grid size-7 shrink-0 place-items-center rounded bg-primary/10 text-[10px] font-bold uppercase text-primary">{l.code}</span>
+   474→              <span className="flex min-w-0 flex-col">
+   475→                <span className="truncate text-sm font-medium">{l.native}</span>
+   476→                <span className="truncate text-xs text-muted-foreground">{l.english}</span>
+   477→              </span>
+   478→              {l.code === locale && <Check className="size-4 shrink-0 text-primary" />}
+   479→            </button>
+   480→          ))}
+   481→        </div>
+   482→      </PopoverContent>
+   483→    </Popover>
+   484→  );
+   485→}
+   486→
+   487→/* ================================================================== */
+   488→/* MEGA PANEL CONTENT                                                 */
+   489→/* ================================================================== */
+   490→function MegaPanel({
+   491→  columns,
+   492→  showSearch,
+   493→  onClose,
+   494→}: {
+   495→  columns: MegaMenuColumn[];
+   496→  showSearch: boolean;
+   497→  onClose: () => void;
+   498→}) {
+   499→  const [query, setQuery] = React.useState("");
+   500→  // Keyboard-navigation index into the flat list of non-disabled items.
+   501→  // -1 means nothing is highlighted (focus stays on the search input).
+   502→  const [activeIndex, setActiveIndex] = React.useState(-1);
+   503→  const itemRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
+   504→  // Scroll container ref — used only when showSearch (All PDF Tools popover).
+   505→  const scrollRef = React.useRef<HTMLDivElement>(null);
+   506→  // Panel root ref — the visible popover card. Wheel/touch listeners are
+   507→  // attached HERE (not on the scroll container) so events over the search
+   508→  // bar, footer, padding, and scrollbar are all intercepted and redirected
+   509→  // to the inner scroller. This guarantees the page NEVER scrolls while the
+   510→  // popover is open, regardless of where the cursor is over the panel.
+   511→  const panelRootRef = React.useRef<HTMLDivElement>(null);
+   512→
+   513→  const filteredColumns = React.useMemo(() => {
+   514→    if (!showSearch || !query.trim()) return columns;
+   515→    const q = query.trim().toLowerCase();
+   516→    return columns
+   517→      .map((col) => ({
+   518→        ...col,
+   519→        items: col.items.filter(
+   520→          (item) =>
+   521→            item.label.toLowerCase().includes(q) ||
+   522→            item.description.toLowerCase().includes(q)
+   523→        ),
+   524→      }))
+   525→      .filter((col) => col.items.length > 0);
+   526→  }, [columns, query, showSearch]);
+   527→
+   528→  // Build a flat list of navigable (non-disabled) items + assign each item a
+   529→  // global index so arrow-key navigation works across columns.
+   530→  const { indexedColumns, flatCount } = React.useMemo(() => {
+   531→    let counter = 0;
+   532→    const indexed = filteredColumns.map((col) => ({
+   533→      ...col,
+   534→      items: col.items.map((item) => ({
+   535→        ...item,
+   536→        _idx: item.disabled ? -1 : counter++,
+   537→      })),
+   538→    }));
+   539→    return { indexedColumns: indexed, flatCount: counter };
+   540→  }, [filteredColumns]);
+   541→
+   542→  // Reset the active highlight whenever the filter result set changes.
+   543→  React.useEffect(() => {
+   544→    setActiveIndex(-1);
+   545→    itemRefs.current = [];
+   546→  }, [query]);
+   547→
+   548→  // Panel-level wheel/touch interception (the core of "popover scrolls
+   549→  // internally, page doesn't"). Listeners are attached to the PANEL ROOT
+   550→  // (not the scroll container) so wheel events over the search bar, footer,
+   551→  // padding, and scrollbar are ALL caught. Every wheel event is preventDefault'd
+   552→  // and the delta is redirected to the inner scroll container — the page can
+   553→  // never scroll while the popover is open. Non-passive (passive:false) is
+   554→  // required for preventDefault to take effect.
+   555→  React.useEffect(() => {
+   556→    if (!showSearch) return;
+   557→    const panel = panelRootRef.current;
+   558→    const scroller = scrollRef.current;
+   559→    if (!panel || !scroller) return;
+   560→
+   561→    const onWheel = (e: WheelEvent) => {
+   562→      e.preventDefault();
+   563→      scroller.scrollTop += e.deltaY;
+   564→      scroller.scrollLeft += e.deltaX;
+   565→    };
+   566→    let lastTouchY = 0;
+   567→    const onTouchStart = (e: TouchEvent) => {
+   568→      lastTouchY = e.touches[0]?.clientY ?? 0;
+   569→    };
+   570→    const onTouchMove = (e: TouchEvent) => {
+   571→      const currentY = e.touches[0]?.clientY ?? 0;
+   572→      const delta = lastTouchY - currentY; // >0 = scrolling down
+   573→      lastTouchY = currentY;
+   574→      e.preventDefault();
+   575→      scroller.scrollTop += delta;
+   576→    };
+   577→
+   578→    panel.addEventListener("wheel", onWheel, { passive: false });
+   579→    panel.addEventListener("touchstart", onTouchStart, { passive: false });
+   580→    panel.addEventListener("touchmove", onTouchMove, { passive: false });
+   581→    return () => {
+   582→      panel.removeEventListener("wheel", onWheel);
+   583→      panel.removeEventListener("touchstart", onTouchStart);
+   584→      panel.removeEventListener("touchmove", onTouchMove);
+   585→    };
+   586→  }, [showSearch]);
+   587→
+   588→  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+   589→    if (e.key === "ArrowDown") {
+   590→      e.preventDefault();
+   591→      setActiveIndex((i) => (flatCount === 0 ? -1 : Math.min(i + 1, flatCount - 1)));
+   592→    } else if (e.key === "ArrowUp") {
+   593→      e.preventDefault();
+   594→      setActiveIndex((i) => (flatCount === 0 ? -1 : Math.max(i - 1, 0)));
+   595→    } else if (e.key === "Enter") {
+   596→      e.preventDefault();
+   597→      const idx = activeIndex;
+   598→      if (idx >= 0 && idx < (itemRefs.current.length)) {
+   599→        itemRefs.current[idx]?.click();
+   600→      }
+   601→    } else if (e.key === "Escape") {
+   602→      e.preventDefault();
+   603→      if (query) {
+   604→        setQuery("");
+   605→      } else {
+   606→        onClose();
+   607→      }
+   608→    }
+   609→  };
+   610→
+   611→  // Extracted so the same grid renders inside the scroll container (AllTools)
+   612→  // or directly (Convert) without duplicating the MegaLink map.
+   613→  const grid = (
+   614→    <motion.div
+   615→      initial={{ opacity: 0, x: -6 }}
+   616→      animate={{ opacity: 1, x: 0 }}
+   617→      transition={{ duration: 0.16, ease: "easeOut" }}
+   618→      className="grid gap-x-8 gap-y-2"
+   619→      style={{
+   620→        gridTemplateColumns: `repeat(${Math.min(filteredColumns.length, 4)}, minmax(200px, 1fr))`,
+   621→      }}
+   622→      id="mega-tools-list"
+   623→      role="listbox"
+   624→    >
+   625→      {indexedColumns.map((col) => (
+   626→        <div key={col.title}>
+   627→          <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+   628→            {col.title}
+   629→          </p>
+   630→          <div className="flex flex-col">
+   631→            {col.items.map((item) => {
+   632→              const Icon = item.icon;
+   633→              return (
+   634→                <MegaLink
+   635→                  key={item.label}
+   636→                  href={item.href}
+   637→                  disabled={item.disabled}
+   638→                  onClose={onClose}
+   639→                  isActive={!item.disabled && item._idx === activeIndex}
+   640→                  itemRef={
+   641→                    item.disabled
+   642→                      ? undefined
+   643→                      : (el) => {
+   644→                          if (item._idx >= 0) itemRefs.current[item._idx] = el;
+   645→                        }
+   646→                  }
+   647→                  ariaId={item.disabled ? undefined : `mega-item-${item._idx}`}
+   648→                >
+   649→                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10">
+   650→                    <Icon className="size-4 text-primary" />
+   651→                  </span>
+   652→                  <span className="flex min-w-0 flex-col">
+   653→                    <span className="flex items-center gap-2 text-sm font-semibold">
+   654→                      {item.label}
+   655→                      {item.disabled && (
+   656→                        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">
+   657→                          Soon
+   658→                        </span>
+   659→                      )}
+   660→                    </span>
+   661→                    <span className="truncate text-xs text-muted-foreground">
+   662→                      {item.description}
+   663→                    </span>
+   664→                  </span>
+   665→                </MegaLink>
+   666→              );
+   667→            })}
+   668→          </div>
+   669→        </div>
+   670→      ))}
+   671→    </motion.div>
+   672→  );
+   673→
+   674→  const noResults =
+   675→    filteredColumns.length === 0 ? (
+   676→      <p className="py-8 text-center text-sm text-muted-foreground">
+   677→        No tools match “{query}”.
+   678→      </p>
+   679→    ) : null;
+   680→
+   681→  return (
+   682→    <div
+   683→      ref={panelRootRef}
+   684→      className="max-w-[min(1100px,92vw)] overflow-hidden rounded-2xl border border-border bg-popover p-0 shadow-[0_16px_40px_rgba(0,0,0,0.10),0_2px_4px_rgba(0,0,0,0.04)]"
+   685→      style={{ backgroundColor: "var(--popover)" }}
+   686→    >
+   687→      {showSearch ? (
+   688→        // Scroll container — the actual scroller for the All PDF Tools popover.
+   689→        // max-h caps the height so the grid scrolls internally instead of the
+   690→        // page. overscroll-contain + the non-passive wheel/touch listeners
+   691→        // (attached to panelRootRef via the effect above) prevent scroll
+   692→        // leakage to the page. role=region + aria-label + tabIndex=0 make it
+   693→        // keyboard-accessible.
+   694→        <div
+   695→          ref={scrollRef}
+   696→          className="menu-scroll overscroll-contain max-h-[min(78vh,720px)] overflow-y-auto p-5"
+   697→          role="region"
+   698→          aria-label="All PDF Tools"
+   699→          tabIndex={0}
+   700→        >
+   701→          {/* Sticky search — pinned to the top of the scroll area so the
+   702→              filter input is always reachable while scrolling. */}
+   703→          <div className="sticky top-0 z-10 -mx-5 mb-4 border-b bg-popover/95 px-5 pb-3 pt-1 backdrop-blur">
+   704→            <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+   705→              <Search className="size-4 text-muted-foreground" />
+   706→              <input
+   707→                autoFocus
+   708→                value={query}
+   709→                onChange={(e) => setQuery(e.target.value)}
+   710→                onKeyDown={onKeyDown}
+   711→                placeholder="Filter tools…"
+   712→                className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+   713→                aria-label="Filter tools"
+   714→                role="combobox"
+   715→                aria-expanded={flatCount > 0}
+   716→                aria-controls="mega-tools-list"
+   717→                aria-activedescendant={activeIndex >= 0 ? `mega-item-${activeIndex}` : undefined}
+   718→              />
+   719→            </div>
+   720→          </div>
+   721→          {grid}
+   722→          {noResults}
+   723→        </div>
+   724→      ) : (
+   725→        // Convert menu — short content, no scroll container (unchanged layout).
+   726→        <div className="p-6">
+   727→          {grid}
+   728→          {noResults}
+   729→        </div>
+   730→      )}
+   731→      {/* Sticky footer — always visible at the bottom of the panel, outside
+   732→          the scroll container so it never scrolls away. */}
+   733→      <div className="sticky bottom-0 border-t border-border bg-popover/95 px-5 py-3 text-right backdrop-blur">
+   734→        <Link
+   735→          href="/tools"
+   736→          onClick={onClose}
+   737→          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+   738→        >
+   739→          Browse all {tools.length} tools <ArrowRight className="size-3.5" />
+   740→        </Link>
+   741→      </div>
+   742→    </div>
+   743→  );
+   744→}
+   745→
+   746→function MegaLink({
+   747→  href,
+   748→  disabled,
+   749→  onClose,
+   750→  children,
+   751→  isActive,
+   752→  itemRef,
+   753→  ariaId,
+   754→}: {
+   755→  href: string;
+   756→  disabled?: boolean;
+   757→  onClose: () => void;
+   758→  children: React.ReactNode;
+   759→  isActive?: boolean;
+   760→  itemRef?: (el: HTMLAnchorElement | null) => void;
+   761→  ariaId?: string;
+   762→}) {
+   763→  if (disabled) {
+   764→    return (
+   765→      <span className="flex cursor-not-allowed items-center gap-3 rounded-lg px-2 py-2 opacity-60">
+   766→        {children}
+   767→      </span>
+   768→    );
+   769→  }
+   770→  return (
+   771→    <Link
+   772→      ref={itemRef}
+   773→      href={href}
+   774→      onClick={onClose}
+   775→      id={ariaId}
+   776→      role="option"
+   777→      aria-selected={isActive}
+   778→      className={cn(
+   779→        "flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
+   780→        isActive && "bg-accent ring-1 ring-ring"
+   781→      )}
+   782→    >
+   783→      {children}
+   784→    </Link>
+   785→  );
+   786→}
+   787→
+   788→/* ================================================================== */
+   789→/* MOBILE SHEET                                                       */
+   790→/* ================================================================== */
+   791→function MobileSheet({
+   792→  open,
+   793→  onOpenChange,
+   794→}: {
+   795→  open: boolean;
+   796→  onOpenChange: (v: boolean) => void;
+   797→}) {
+   798→  return (
+   799→    <Sheet open={open} onOpenChange={onOpenChange}>
+   800→      <SheetContent side="right" className="w-[340px] overflow-y-auto p-0">
+   801→        <SheetHeader className="px-5 pt-5">
+   802→          <SheetTitle className="text-left logo-lock" dir="ltr">
+   803→            <Logo className="h-7 w-auto" size={28} />
+   804→          </SheetTitle>
+   805→        </SheetHeader>
+   806→        <div className="px-3 pb-10 pt-3">
+   807→          {/* Search */}
+   808→          <MobileSearch onClose={() => onOpenChange(false)} />
+   809→
+   810→          <Accordion type="multiple" className="w-full">
+   811→            {/* Convert PDF section */}
+   812→            <AccordionItem value="convert">
+   813→              <AccordionTrigger className="text-sm font-semibold uppercase tracking-wide">
+   814→                Convert PDF
+   815→              </AccordionTrigger>
+   816→              <AccordionContent>
+   817→                <div className="flex flex-col gap-0.5 pb-2">
+   818→                  {convertPdfMenu.flatMap((col) => col.items).map((item) => {
+   819→                    const Icon = item.icon;
+   820→                    return (
+   821→                      <Link
+   822→                        key={item.label}
+   823→                        href={item.href}
+   824→                        onClick={() => onOpenChange(false)}
+   825→                        className="flex min-h-[44px] items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-accent"
+   826→                      >
+   827→                        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10">
+   828→                          <Icon className="size-4 text-primary" />
+   829→                        </span>
+   830→                        <span className="flex min-w-0 flex-col">
+   831→                          <span className="font-medium">{item.label}</span>
+   832→                          <span className="truncate text-xs text-muted-foreground">
+   833→                            {item.description}
+   834→                          </span>
+   835→                        </span>
+   836→                      </Link>
+   837→                    );
+   838→                  })}
+   839→                </div>
+   840→              </AccordionContent>
+   841→            </AccordionItem>
+   842→
+   843→            {/* All tools by category */}
+   844→            {categoryOrder.map((cat) => (
+   845→              <AccordionItem key={cat} value={cat}>
+   846→                <AccordionTrigger className="text-sm font-semibold uppercase tracking-wide">
+   847→                  {categoryLabels[cat]}
+   848→                </AccordionTrigger>
+   849→                <AccordionContent>
+   850→                  <div className="flex flex-col gap-0.5 pb-2">
+   851→                    {tools
+   852→                      .filter((t) => t.category === cat)
+   853→                      .map((t) => {
+   854→                        const Icon = t.icon;
+   855→                        return (
+   856→                          <Link
+   857→                            key={t.slug}
+   858→                            href={`/tools/${t.slug}`}
+   859→                            onClick={() => onOpenChange(false)}
+   860→                            className="flex min-h-[44px] items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-accent"
+   861→                          >
+   862→                            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10">
+   863→                              <Icon className="size-4 text-primary" />
+   864→                            </span>
+   865→                            <span className="flex min-w-0 flex-col">
+   866→                              <span className="font-medium">{t.name}</span>
+   867→                              <span className="truncate text-xs text-muted-foreground">
+   868→                                {t.short}
+   869→                              </span>
+   870→                            </span>
+   871→                          </Link>
+   872→                        );
+   873→                      })}
+   874→                  </div>
+   875→                </AccordionContent>
+   876→              </AccordionItem>
+   877→            ))}
+   878→          </Accordion>
+   879→
+   880→          {/* Bottom: theme + more */}
+   881→          <div className="mt-4 border-t pt-4">
+   882→            <div className="mb-3 flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
+   883→              <span className="text-xs font-medium text-muted-foreground">Theme</span>
+   884→              <ThemeToggle />
+   885→            </div>
+   886→            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+   887→              More
+   888→            </p>
+   889→            <div className="flex flex-col">
+   890→              <Link href="/help" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   891→                Help Center
+   892→              </Link>
+   893→              <Link href="/contact" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   894→                Contact
+   895→              </Link>
+   896→              <Link href="/status" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   897→                Status
+   898→              </Link>
+   899→              <Link href="/solutions/students" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   900→                For Students
+   901→              </Link>
+   902→              <Link href="/solutions/teams" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   903→                For Teams
+   904→              </Link>
+   905→              <Link href="/solutions/developers" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+   906→                For Developers
+   907→              </Link>
+   908→            </div>
+   909→          </div>
+   910→        </div>
+   911→      </SheetContent>
+   912→    </Sheet>
+   913→  );
+   914→}
+   915→
+   916→/** Mobile search — filters all tools and navigates on click. */
+   917→function MobileSearch({ onClose }: { onClose: () => void }) {
+   918→  const [q, setQ] = React.useState("");
+   919→  const filtered = React.useMemo(() => {
+   920→    if (!q.trim()) return [];
+   921→    const query = q.trim().toLowerCase();
+   922→    return tools.filter(
+   923→      (t) =>
+   924→        t.name.toLowerCase().includes(query) ||
+   925→        t.short.toLowerCase().includes(query) ||
+   926→        t.keywords.some((k) => k.includes(query))
+   927→    );
+   928→  }, [q]);
+   929→
+   930→  return (
+   931→    <div className="mb-4">
+   932→      <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+   933→        <Search className="size-4 text-muted-foreground" />
+   934→        <input
+   935→          value={q}
+   936→          onChange={(e) => setQ(e.target.value)}
+   937→          placeholder="Search tools…"
+   938→          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+   939→          aria-label="Search tools"
+   940→        />
+   941→      </div>
+   942→      {filtered.length > 0 && (
+   943→        <div className="mt-2 max-h-60 overflow-y-auto scrollbar-thin">
+   944→          {filtered.map((t) => {
+   945→            const Icon = t.icon;
+   946→            return (
+   947→              <Link
+   948→                key={t.slug}
+   949→                href={`/tools/${t.slug}`}
+   950→                onClick={onClose}
+   951→                className="flex min-h-[44px] items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-accent"
+   952→              >
+   953→                <Icon className="size-4 text-primary" />
+   954→                <span className="font-medium">{t.name}</span>
+   955→              </Link>
+   956→            );
+   957→          })}
+   958→        </div>
+   959→      )}
+   960→    </div>
+   961→  );
+   962→}
+   963→

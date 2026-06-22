@@ -275,6 +275,7 @@ function SharedMegaNav({ onMobileOpen }: { onMobileOpen: () => void }) {
             onClick={() => handleTriggerClick("allTools")}
             triggerRef={allToolsTriggerRef}
           />
+          <NavLink href="/blog">Blog</NavLink>
         </nav>
 
         {/* RIGHT — theme toggle + 9-dot Apps popover (desktop), hamburger (mobile) */}
@@ -887,6 +888,9 @@ function MobileSheet({
               More
             </p>
             <div className="flex flex-col">
+              <Link href="/blog" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
+                Blog
+              </Link>
               <Link href="/help" onClick={() => onOpenChange(false)} className="min-h-[44px] rounded-lg px-2 py-2 text-sm hover:bg-accent">
                 Help Center
               </Link>
